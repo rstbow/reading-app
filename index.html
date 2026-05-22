@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>My Reading Adventure</title>
+
+<style>
+  :root {
+    --green: #43A047;
+    --green-dark: #2E7D32;
+    --blue: #1E88E5;
+    --blue-dark: #1565C0;
+    --red: #E53935;
+    --orange: #FB8C00;
+    --purple: #8E24AA;
+    --teal: #00897B;
+    --gold: #FFD600;
+    --bg: #F0F4F8;
+    --card: #FFFFFF;
+    --text: #1A1A2E;
+    --muted: #6B7280;
+    --radius: 20px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── HOME SCREEN ── */
+  #home {
+    background: linear-gradient(160deg, #1A237E 0%, #1565C0 50%, #0288D1 100%);
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  #home::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+    top: -200px; right: -200px;
+  }
+  #home::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+    bottom: -100px; left: -100px;
+  }
+  .home-icon { font-size: 80px; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+  .home-title {
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 42px;
+    color: white;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .home-sub { font-size: 18px; color: rgba(255,255,255,0.8); margin-bottom: 40px; font-weight: 600; }
+  .name-input-wrap { width: 100%; max-width: 340px; margin-bottom: 32px; }
+  .name-label { color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 700; margin-bottom: 8px; display: block; }
+  .name-input {
+    width: 100%;
+    padding: 16px 20px;
+    border-radius: 16px;
+    border: 3px solid rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    outline: none;
+    text-align: center;
+    backdrop-filter: blur(10px);
+  }
+  .name-input::placeholder { color: rgba(255,255,255,0.5); }
+  .name-input:focus { border-color: var(--gold); background: rgba(255,255,255,0.2); }
+  .start-btn {
+    background: var(--gold);
+    color: #1A1A2E;
+    border: none;
+    border-radius: 18px;
+    padding: 18px 48px;
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 26px;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(255,214,0,0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .start-btn:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(255,214,0,0.3); }
+
+  /* ── MAP SCREEN ── */
+  #map {
+    background: linear-gradient(180deg, #E8F5E9 0%, #F0F4F8 100%);
+    padding: 0;
+  }
+  .map-header {
+    background: linear-gradient(135deg, #2E7D32, #43A047);
+    padding: 24px 24px 20px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 16px rgba(46,125,50,0.3);
+  }
+  .map-avatar { font-size: 36px; }
+  .map-header-text h2 { font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; }
+  .map-header-text p { font-size: 14px; opacity: 0.9; font-weight: 600; }
+  .progress-bar-wrap { background: rgba(255,255,255,0.3); border-radius: 20px; height: 10px; margin-top: 8px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--gold); border-radius: 20px; transition: width 0.6s ease; }
+
+  .map-scroll { flex: 1; overflow-y: auto; padding: 24px 20px 40px; }
+  .map-title { font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; color: var(--green-dark); margin-bottom: 20px; text-align: center; }
+
+  .day-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: white;
+    border-radius: 18px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .day-card:active { transform: scale(0.98); }
+  .day-card.locked { opacity: 0.45; cursor: not-allowed; }
+  .day-card.done { border-color: var(--green); }
+  .day-card.done::after {
+    content: '✓';
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 26px;
+    color: var(--green);
+    font-weight: 900;
+  }
+  .day-card.current { border-color: var(--gold); box-shadow: 0 4px 20px rgba(255,214,0,0.3); }
+  .day-num {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 22px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .day-info h3 { font-size: 18px; font-weight: 800; margin-bottom: 2px; }
+  .day-info p { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .day-emoji { font-size: 28px; margin-left: auto; margin-right: 36px; }
+
+  /* ── STORY SCREEN ── */
+  #story { background: white; }
+  .story-header {
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 2px solid #F0F4F8;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+  }
+  .back-btn {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    border: none;
+    background: #F0F4F8;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .back-btn:active { background: #E2E8F0; }
+  .story-header-info { flex: 1; }
+  .story-day-tag { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+  .story-header-title { font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 20px; line-height: 1.2; }
+  .story-emoji-big { font-size: 36px; }
+
+  .story-body { padding: 24px 24px 40px; flex: 1; }
+
+  .key-words-box {
+    background: #F8F9FF;
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-bottom: 28px;
+    border-left: 5px solid var(--accent);
+  }
+  .key-words-label { font-size: 13px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .key-words-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .key-word-chip {
+    background: var(--accent);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  .story-line {
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.9;
+    margin-bottom: 6px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+  .story-line .highlight { background: rgba(255,214,0,0.4); border-radius: 4px; padding: 0 2px; font-weight: 800; }
+
+  /* ── QUIZ ── */
+  .quiz-section {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 2px solid #F0F4F8;
+  }
+  .quiz-title { font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; margin-bottom: 6px; }
+  .quiz-sub { font-size: 15px; color: var(--muted); font-weight: 600; margin-bottom: 20px; }
+  .quiz-q { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+  .quiz-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .quiz-opt {
+    padding: 16px 20px;
+    border-radius: 14px;
+    border: 3px solid #E2E8F0;
+    background: white;
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  .quiz-opt:active { transform: scale(0.98); }
+  .quiz-opt.correct { background: #E8F5E9; border-color: var(--green); color: var(--green-dark); }
+  .quiz-opt.wrong { background: #FFEBEE; border-color: var(--red); color: var(--red); }
+  .quiz-opt.disabled { cursor: default; }
+  .quiz-feedback { font-size: 18px; font-weight: 800; margin-bottom: 16px; min-height: 28px; }
+  .quiz-feedback.good { color: var(--green); }
+  .quiz-feedback.bad { color: var(--red); }
+
+  /* ── SIGN OFF ── */
+  .signoff-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid #F0F4F8;
+  }
+  .signoff-title { font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; margin-bottom: 16px; }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 3px solid #E2E8F0;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 18px;
+    font-weight: 700;
+    background: white;
+  }
+  .check-item.checked { border-color: var(--green); background: #E8F5E9; }
+  .check-box {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 3px solid #CBD5E1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    background: white;
+  }
+  .check-item.checked .check-box { background: var(--green); border-color: var(--green); color: white; }
+
+  .sig-wrap { margin-top: 20px; }
+  .sig-label { font-size: 16px; font-weight: 800; margin-bottom: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .sig-canvas-wrap {
+    border: 3px solid #E2E8F0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #FAFAFA;
+    position: relative;
+  }
+  canvas { display: block; touch-action: none; }
+  .sig-hint {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: #CBD5E1;
+    font-size: 17px;
+    font-weight: 700;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .sig-clear {
+    margin-top: 8px;
+    background: none;
+    border: 2px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .finish-btn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 20px;
+    border: none;
+    border-radius: 18px;
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 24px;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.2s;
+    color: white;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+  .finish-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .finish-btn:not(:disabled):active { transform: scale(0.97); }
+
+  /* ── CELEBRATE SCREEN ── */
+  #celebrate {
+    background: linear-gradient(160deg, #1B5E20 0%, #2E7D32 50%, #43A047 100%);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+  }
+  .celebrate-icon { font-size: 100px; animation: bounce 0.6s ease infinite alternate; }
+  @keyframes bounce { from{transform:scale(1)} to{transform:scale(1.15)} }
+  .celebrate-title { font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 48px; color: var(--gold); margin: 16px 0 8px; text-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .celebrate-name { font-size: 28px; color: white; font-weight: 800; margin-bottom: 12px; }
+  .celebrate-msg { font-size: 20px; color: rgba(255,255,255,0.9); font-weight: 600; margin-bottom: 40px; line-height: 1.5; }
+  .stars { font-size: 40px; margin-bottom: 24px; animation: spin 2s linear infinite; }
+  @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+  .celebrate-btn {
+    background: var(--gold);
+    color: #1A1A2E;
+    border: none;
+    border-radius: 18px;
+    padding: 18px 40px;
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(255,214,0,0.4);
+    transition: transform 0.15s;
+  }
+  .celebrate-btn:active { transform: scale(0.96); }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="home-icon">🎮</div>
+  <h1 class="home-title">My Reading<br>Adventure</h1>
+  <p class="home-sub">Minecraft & Lego • 10 Days</p>
+  <div class="name-input-wrap">
+    <label class="name-label">What is your name?</label>
+    <input class="name-input" id="nameInput" type="text" placeholder="Type your name..." maxlength="30" autocomplete="off">
+  </div>
+  <button class="start-btn" onclick="startApp()">Let's Go! ⚡</button>
+</div>
+
+<!-- MAP -->
+<div id="map" class="screen">
+  <div class="map-header">
+    <div class="map-avatar">🧑‍💻</div>
+    <div class="map-header-text">
+      <h2 id="mapName">Reading Adventure</h2>
+      <p id="mapProgress">0 of 10 days done</p>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+  <div class="map-scroll">
+    <div class="map-title">Choose Today's Story 📖</div>
+    <div id="dayList"></div>
+  </div>
+</div>
+
+<!-- STORY -->
+<div id="story" class="screen">
+  <div class="story-header">
+    <button class="back-btn" onclick="showMap()">←</button>
+    <div class="story-header-info">
+      <div class="story-day-tag" id="storyDayTag"></div>
+      <div class="story-header-title" id="storyHeaderTitle"></div>
+    </div>
+    <div class="story-emoji-big" id="storyEmoji"></div>
+  </div>
+  <div class="story-body" id="storyBody"></div>
+</div>
+
+<!-- CELEBRATE -->
+<div id="celebrate" class="screen">
+  <div class="celebrate-icon">🏆</div>
+  <div class="stars">⭐</div>
+  <div class="celebrate-title">You Did It!</div>
+  <div class="celebrate-name" id="celebrateName"></div>
+  <div class="celebrate-msg" id="celebrateMsg"></div>
+  <button class="celebrate-btn" onclick="showMap()">Back to My Days 🗺️</button>
+</div>
+
+<script>
+const STORIES = [
+  {
+    day:1, title:"The Dirt House", theme:"MINECRAFT", emoji:"🪵",
+    color:"#1565C0", bg:"#E3F2FD",
+    keyWords:["dig","dirt","house","safe","dark"],
+    lines:[
+      "Max dug in the dirt.",
+      "He dug and dug.",
+      "The dirt came out fast.",
+      "He dug a big hole.",
+      "He made walls from dirt.",
+      "He made a roof from dirt.",
+      "The dirt house was small.",
+      "But the dirt house was his.",
+      "The sky got dark.",
+      "Max was safe in his dirt house.",
+      "He sat in the dark.",
+      "He felt safe.",
+      "He liked his dirt house.",
+      "It was a good house.",
+      "Max went to sleep.",
+      "He was safe.",
+    ],
+    quiz:{ q:"Where did Max sleep?", opts:["In a tree","In his dirt house","In a cave","By the river"], ans:1 }
+  },
+  {
+    day:2, title:"The Big Tree", theme:"MINECRAFT", emoji:"🌲",
+    color:"#2E7D32", bg:"#E8F5E9",
+    keyWords:["cut","tree","wood","chop","fall"],
+    lines:[
+      "Sam saw a big tree.",
+      "Sam had an axe.",
+      "He hit the tree.",
+      "Chop!",
+      "He hit the tree again.",
+      "Chop! Chop!",
+      "The tree did not fall yet.",
+      "Sam kept going.",
+      "Chop! Chop! Chop!",
+      "The tree fell down.",
+      "Sam got the wood.",
+      "He had a lot of wood now.",
+      "Wood was good.",
+      "Sam could use the wood.",
+      "He cut more wood from the tree.",
+      "He had all the wood he needed.",
+    ],
+    quiz:{ q:"What did Sam use to hit the tree?", opts:["A sword","A pick","An axe","His hand"], ans:2 }
+  },
+  {
+    day:3, title:"The Red Brick", theme:"LEGO", emoji:"🧱",
+    color:"#C62828", bg:"#FFEBEE",
+    keyWords:["brick","red","snap","stack","build"],
+    lines:[
+      "Mia had a red brick.",
+      "She had a blue brick too.",
+      "She put the red brick down.",
+      "She put the blue brick on top.",
+      "Snap!",
+      "They fit.",
+      "She got a green brick.",
+      "She put the green brick on top.",
+      "Snap!",
+      "It fit too.",
+      "She kept going.",
+      "Snap. Snap. Snap.",
+      "The stack got tall.",
+      "It was a tall red, blue, and green stack.",
+      "Mia liked her stack.",
+      "She was good at this.",
+    ],
+    quiz:{ q:"What sound did the bricks make?", opts:["Click","Boom","Snap","Pop"], ans:2 }
+  },
+  {
+    day:4, title:"The Cow and the Milk", theme:"MINECRAFT", emoji:"🐄",
+    color:"#5D4037", bg:"#EFEBE9",
+    keyWords:["cow","find","food","eat","good"],
+    lines:[
+      "Ben was hungry.",
+      "Ben had to find food.",
+      "He went out to look.",
+      "He saw a cow.",
+      "The cow was brown and white.",
+      "Ben got some food from the cow.",
+      "He ate the food.",
+      "It was good.",
+      "He ate more.",
+      "The food was very good.",
+      "Ben was not hungry now.",
+      "He went to find more cows.",
+      "He found two more cows.",
+      "He got more food.",
+      "He ate and ate.",
+      "Ben was full and happy.",
+    ],
+    quiz:{ q:"Why did Ben go out?", opts:["To fight mobs","To find food","To find wood","To dig a cave"], ans:1 }
+  },
+  {
+    day:5, title:"The Lego Car", theme:"LEGO", emoji:"🚗",
+    color:"#E65100", bg:"#FFF3E0",
+    keyWords:["car","wheel","roll","fast","go"],
+    lines:[
+      "Tom made a Lego car.",
+      "The car had four wheels.",
+      "Tom put the wheels on.",
+      "Click. Click. Click. Click.",
+      "Four wheels on the car.",
+      "Tom pushed the car.",
+      "The car went fast.",
+      "It rolled and rolled.",
+      "It went all the way to the wall.",
+      "Tom got the car.",
+      "He pushed it again.",
+      "Fast! Fast!",
+      "The car rolled fast.",
+      "Tom made the car go again and again.",
+      "He loved his Lego car.",
+      "It was the best car.",
+    ],
+    quiz:{ q:"How many wheels did the car have?", opts:["Two","Three","Four","Six"], ans:2 }
+  },
+  {
+    day:6, title:"The Dark Cave", theme:"MINECRAFT", emoji:"🕯️",
+    color:"#4527A0", bg:"#EDE7F6",
+    keyWords:["dark","light","torch","cave","see"],
+    lines:[
+      "Lily went into a cave.",
+      "The cave was dark.",
+      "It was very dark.",
+      "Lily could not see.",
+      "She got out a torch.",
+      "The torch made light.",
+      "Now Lily could see.",
+      "She put the torch on the wall.",
+      "The light helped her see the cave.",
+      "She went in more.",
+      "It got dark again.",
+      "She put up one more torch.",
+      "More light now.",
+      "She could see the whole cave.",
+      "The torch was good.",
+      "Light was good.",
+    ],
+    quiz:{ q:"What did Lily use to make light?", opts:["A lamp","A torch","The sun","Fire"], ans:1 }
+  },
+  {
+    day:7, title:"Stack It High", theme:"LEGO", emoji:"🏗️",
+    color:"#00695C", bg:"#E0F2F1",
+    keyWords:["stack","high","tall","top","fall"],
+    lines:[
+      "Jake had lots of bricks.",
+      "He put one brick down.",
+      "He put one on top.",
+      "Then one more on top of that.",
+      "He kept going.",
+      "The stack got tall.",
+      "And tall.",
+      "And taller.",
+      "Jake kept stacking.",
+      "The stack was very tall now.",
+      "He put one more brick on top.",
+      "The tall stack began to tip.",
+      "It fell!",
+      "Bricks went everywhere.",
+      "Jake laughed.",
+      "Then he started to stack again.",
+    ],
+    quiz:{ q:"What happened to the tall stack?", opts:["It stayed up","It fell down","Jake took it apart","It got bigger"], ans:1 }
+  },
+  {
+    day:8, title:"The Iron Sword", theme:"MINECRAFT", emoji:"⚔️",
+    color:"#37474F", bg:"#ECEFF1",
+    keyWords:["iron","sword","hit","fight","strong"],
+    lines:[
+      "Kai had iron.",
+      "He made a sword from the iron.",
+      "The iron sword was strong.",
+      "Kai held the iron sword.",
+      "It felt good.",
+      "A mob came at him.",
+      "Kai hit the mob.",
+      "He hit it with his sword.",
+      "The mob went away.",
+      "Two more mobs came.",
+      "Kai hit the first mob.",
+      "He hit the second mob.",
+      "Both mobs went away.",
+      "His iron sword was strong.",
+      "Kai was strong too.",
+      "The iron sword kept him safe.",
+    ],
+    quiz:{ q:"What did Kai make from iron?", opts:["An axe","A pick","A sword","A shield"], ans:2 }
+  },
+  {
+    day:9, title:"The Lego Bridge", theme:"LEGO", emoji:"🌉",
+    color:"#283593", bg:"#E8EAF6",
+    keyWords:["bridge","cross","strong","hold","side"],
+    lines:[
+      "Ana had two Lego towers.",
+      "One tower was on this side.",
+      "One tower was on that side.",
+      "She put a long brick from side to side.",
+      "It made a bridge.",
+      "Was the bridge strong?",
+      "She pushed a car onto the bridge.",
+      "The bridge held.",
+      "She pushed the car across.",
+      "The car made it to the other side.",
+      "The bridge was strong.",
+      "She put two cars on the bridge.",
+      "The bridge held two cars.",
+      "The bridge was very strong.",
+      "Ana made a good bridge.",
+      "She was proud of her strong bridge.",
+    ],
+    quiz:{ q:"What did Ana test the bridge with?", opts:["A brick","A car","A person","A block"], ans:1 }
+  },
+  {
+    day:10, title:"You Did It!", theme:"BOTH", emoji:"🌟",
+    color:"#E65100", bg:"#FFF8E1",
+    keyWords:["read","did","good","great","proud"],
+    lines:[
+      "You read today.",
+      "You read all the words.",
+      "You did it.",
+      "That is good.",
+      "That is very good.",
+      "You read nine stories.",
+      "Now you read this one.",
+      "That is ten stories.",
+      "Ten!",
+      "You did that.",
+      "You read and read.",
+      "Day after day.",
+      "You did not stop.",
+      "You kept going.",
+      "You are a great reader.",
+      "You did it. Be proud.",
+    ],
+    quiz:{ q:"How many stories did you read?", opts:["Five","Eight","Nine","Ten"], ans:3 }
+  }
+];
+
+let userName = "";
+let completed = JSON.parse(localStorage.getItem('reading_done') || '[]');
+let currentDay = null;
+let sigCanvas, sigCtx, drawing = false, hasSig = false;
+let checks = [false, false, false];
+let quizDone = false;
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function startApp() {
+  const n = document.getElementById('nameInput').value.trim();
+  if (!n) { document.getElementById('nameInput').focus(); return; }
+  userName = n;
+  localStorage.setItem('reading_name', n);
+  showMap();
+}
+
+function showMap() {
+  show('map');
+  document.getElementById('mapName').textContent = userName + "'s Adventure";
+  const done = completed.length;
+  document.getElementById('mapProgress').textContent = done + " of 10 days done";
+  document.getElementById('progressFill').style.width = (done * 10) + "%";
+  renderDayList();
+}
+
+function renderDayList() {
+  const list = document.getElementById('dayList');
+  list.innerHTML = '';
+  STORIES.forEach((s, i) => {
+    const isDone = completed.includes(i);
+    const isCurrent = !isDone && (i === 0 || completed.includes(i - 1));
+    const isLocked = !isDone && !isCurrent;
+    const card = document.createElement('div');
+    card.className = 'day-card' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '') + (isLocked ? ' locked' : '');
+    card.innerHTML = `
+      <div class="day-num" style="background:${s.color}">${s.day}</div>
+      <div class="day-info">
+        <h3>${s.title}</h3>
+        <p>${s.theme} • Day ${s.day}</p>
+      </div>
+      <div class="day-emoji">${s.emoji}</div>
+    `;
+    if (!isLocked) card.onclick = () => openStory(i);
+    list.appendChild(card);
+  });
+}
+
+function highlightKeyWords(line, keywords) {
+  let out = line;
+  keywords.forEach(kw => {
+    const re = new RegExp('\\b(' + kw + ')\\b', 'gi');
+    out = out.replace(re, '<span class="highlight">$1</span>');
+  });
+  return out;
+}
+
+function openStory(idx) {
+  currentDay = idx;
+  checks = [false, false, false];
+  quizDone = false;
+  const s = STORIES[idx];
+  document.documentElement.style.setProperty('--accent', s.color);
+
+  document.getElementById('storyDayTag').textContent = 'DAY ' + s.day + ' • ' + s.theme;
+  document.getElementById('storyDayTag').style.color = s.color;
+  document.getElementById('storyHeaderTitle').textContent = s.title;
+  document.getElementById('storyEmoji').textContent = s.emoji;
+
+  const body = document.getElementById('storyBody');
+  body.innerHTML = '';
+
+  // Key words box
+  const kwBox = document.createElement('div');
+  kwBox.className = 'key-words-box';
+  kwBox.style.borderColor = s.color;
+  kwBox.innerHTML = `<div class="key-words-label">Look for these words 👀</div><div class="key-words-list">${s.keyWords.map(w=>`<span class="key-word-chip" style="background:${s.color}">${w}</span>`).join('')}</div>`;
+  body.appendChild(kwBox);
+
+  // Story lines
+  s.lines.forEach(line => {
+    const p = document.createElement('div');
+    p.className = 'story-line';
+    p.innerHTML = highlightKeyWords(line, s.keyWords);
+    body.appendChild(p);
+  });
+
+  // Quiz
+  const quiz = document.createElement('div');
+  quiz.className = 'quiz-section';
+  quiz.innerHTML = `
+    <div class="quiz-title" style="color:${s.color}">Quick Check ✏️</div>
+    <div class="quiz-sub">Tap the right answer</div>
+    <div class="quiz-q">${s.quiz.q}</div>
+    <div class="quiz-options" id="quizOpts">
+      ${s.quiz.opts.map((o,i)=>`<button class="quiz-opt" onclick="answerQuiz(${i},${s.quiz.ans})">${o}</button>`).join('')}
+    </div>
+    <div class="quiz-feedback" id="quizFeedback"></div>
+  `;
+  body.appendChild(quiz);
+
+  // Sign off
+  const signoff = document.createElement('div');
+  signoff.className = 'signoff-section';
+  signoff.innerHTML = `
+    <div class="signoff-title" style="color:${s.color}">Sign Off ✍️</div>
+    <div id="checks">
+      ${['I read every word','I found the key words','I am proud of myself'].map((label,i)=>`
+        <div class="check-item" id="check${i}" onclick="toggleCheck(${i})">
+          <div class="check-box" id="box${i}"></div>
+          <span>${label}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="sig-wrap">
+      <div class="sig-label">Sign your name below</div>
+      <div class="sig-canvas-wrap">
+        <canvas id="sigCanvas" width="600" height="140"></canvas>
+        <div class="sig-hint" id="sigHint">✍️ Draw your name here</div>
+      </div>
+      <button class="sig-clear" onclick="clearSig()">Clear ✕</button>
+    </div>
+    <button class="finish-btn" id="finishBtn" style="background:${s.color}" onclick="finishDay()" disabled>
+      Done for Today! 🎉
+    </button>
+  `;
+  body.appendChild(signoff);
+
+  show('story');
+  setupCanvas();
+}
+
+function answerQuiz(chosen, correct) {
+  if (quizDone) return;
+  quizDone = true;
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach((o, i) => {
+    o.classList.add('disabled');
+    if (i === correct) o.classList.add('correct');
+    else if (i === chosen) o.classList.add('wrong');
+  });
+  const fb = document.getElementById('quizFeedback');
+  if (chosen === correct) {
+    fb.textContent = '✅ Yes! That is right!';
+    fb.className = 'quiz-feedback good';
+  } else {
+    fb.textContent = '❌ Not quite — the right answer is highlighted in green.';
+    fb.className = 'quiz-feedback bad';
+  }
+  checkFinishReady();
+}
+
+function toggleCheck(i) {
+  checks[i] = !checks[i];
+  const item = document.getElementById('check' + i);
+  const box = document.getElementById('box' + i);
+  item.classList.toggle('checked', checks[i]);
+  box.textContent = checks[i] ? '✓' : '';
+  checkFinishReady();
+}
+
+function checkFinishReady() {
+  const allChecked = checks.every(Boolean);
+  document.getElementById('finishBtn').disabled = !(allChecked && hasSig && quizDone);
+}
+
+function setupCanvas() {
+  sigCanvas = document.getElementById('sigCanvas');
+  // Fit to container
+  const wrap = sigCanvas.parentElement;
+  const w = wrap.clientWidth || 340;
+  sigCanvas.width = w;
+  sigCanvas.height = 140;
+  sigCtx = sigCanvas.getContext('2d');
+  sigCtx.strokeStyle = '#1A1A2E';
+  sigCtx.lineWidth = 4;
+  sigCtx.lineCap = 'round';
+  sigCtx.lineJoin = 'round';
+  hasSig = false;
+
+  function getPos(e) {
+    const r = sigCanvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+  sigCanvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); });
+  sigCanvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); hasSig = true; document.getElementById('sigHint').style.opacity = '0'; checkFinishReady(); });
+  sigCanvas.addEventListener('mouseup', () => drawing = false);
+  sigCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); }, { passive: false });
+  sigCanvas.addEventListener('touchmove', e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); hasSig = true; document.getElementById('sigHint').style.opacity = '0'; checkFinishReady(); }, { passive: false });
+  sigCanvas.addEventListener('touchend', () => drawing = false);
+}
+
+function clearSig() {
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  hasSig = false;
+  document.getElementById('sigHint').style.opacity = '1';
+  checkFinishReady();
+}
+
+function finishDay() {
+  if (!completed.includes(currentDay)) {
+    completed.push(currentDay);
+    localStorage.setItem('reading_done', JSON.stringify(completed));
+  }
+  const s = STORIES[currentDay];
+  document.getElementById('celebrateName').textContent = userName + "!";
+  const msgs = [
+    "You read Day " + s.day + ".\nYou are doing great!",
+    "Another story done.\nKeep it up — you are on a roll!",
+    "Day " + s.day + " complete!\nYou are getting stronger every day.",
+  ];
+  document.getElementById('celebrateMsg').textContent = msgs[Math.floor(Math.random() * msgs.length)];
+  show('celebrate');
+}
+
+// Init
+window.onload = () => {
+  const saved = localStorage.getItem('reading_name');
+  if (saved) {
+    userName = saved;
+    document.getElementById('nameInput').value = saved;
+  }
+};
+</script>
+</body>
+</html>
