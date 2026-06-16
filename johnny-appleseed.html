@@ -149,21 +149,21 @@
 
 <!-- HOME -->
 <div id="home" class="screen active">
-  <div class="home-icon">🌱</div>
+  <div class="home-icon">🍎</div>
   <h1 class="home-title">Trent's Reading<br>Adventure</h1>
-  <p class="home-sub">Johnny Goes Wild • 10 Days</p>
+  <p class="home-sub">Johnny Appleseed • 10 Days</p>
   <div class="home-card">
     <label class="name-label">What is your name?</label>
     <input class="name-input" id="nameInput" type="text" placeholder="Type your name..." maxlength="30" autocomplete="off">
   </div>
-  <button class="start-btn" onclick="startApp()">Let's Go! 🌱</button>
+  <button class="start-btn" onclick="startApp()">Let's Go! 🍎</button>
 </div>
 
 <!-- MAP -->
 <div id="map" class="screen">
   <div class="map-header">
     <div class="map-header-top">
-      <div class="map-avatar">🌱</div>
+      <div class="map-avatar">🍎</div>
       <div class="map-hd">
         <h2 id="mapName">Reading Adventure</h2>
         <p id="mapProg">0 of 10 days done</p>
@@ -202,55 +202,55 @@
 
 <script>
 const STORIES = [
-  { day:1, title:"Too Many Seeds", emoji:"🌱", color:"#2E7D32", bg:"#E8F5E9",
-    keyWords:["seeds","plant","more","bag","grow"],
-    lines:["Johnny had a big bag of seeds.","He wanted to plant them all.","He would plant seeds in the yard.","He would plant seeds by the road.",'"More!" said Johnny. "More seeds!"',"He wanted more and more.","He got one more bag.","A big bag of seeds.","He wanted them all to grow.","Grow, seeds, grow!","Johnny could not stop.","He had to plant more.","Plant the seeds. Watch them grow.","So many seeds!"],
-    quiz:{ q:"What did Johnny want to do?", opts:["Plant lots of seeds","Sell his bag","Eat the seeds","Go to sleep"], ans:0 }
+  { day:1, title:"Johnny Loved Apples", emoji:"🍎", color:"#C62828", bg:"#FFEBEE",
+    keyWords:["apple","Johnny","loved","plant","seed"],
+    lines:["Johnny loved apples.","He loved them a lot.","He ate apples every day.","Red apples. Green apples.","Big apples. Small apples.","Johnny loved them all.","He had a big bag of seeds.","Apple seeds.","He wanted to plant the seeds.","He wanted apple trees to grow.","That is why his name was Johnny Appleseed.","Johnny loved apples.","And he wanted to share them.","With everyone."],
+    quiz:{ q:"Why was his name Johnny Appleseed?", opts:["He sold apples","He planted apple seeds","He ate too many apples","He lived in an apple tree"], ans:1 }
   },
-  { day:2, title:"Seeds Everywhere", emoji:"🌾", color:"#558B2F", bg:"#F1F8E9",
-    keyWords:["town","road","yard","seeds","plant"],
-    lines:["Johnny went all over town.","He had seeds in his hands.","He put seeds in the road.","He put seeds in a yard.","He put seeds by the shop.","Seeds in the park. Seeds in town.","Plant here. Plant there.","Johnny would plant them all.","Seeds in every yard in town.","Up the road and down the road.","Not one yard was left out.","The whole town had seeds now.","Johnny would plant the whole town.","Seeds, seeds, seeds!"],
-    quiz:{ q:"Where did Johnny put seeds?", opts:["Only in his yard","All over town","In the sea","In a box"], ans:1 }
+  { day:2, title:"Johnny Goes to the Store", emoji:"🏪", color:"#E65100", bg:"#FFF3E0",
+    keyWords:["store","buy","apples","bag","went"],
+    lines:["Johnny went to the store.","He had his bag with him.","He went to get apples.","The store had lots of apples.","Red ones on the left.","Green ones on the right.","Johnny looked at them all.","He picked up a red apple.","It was big and round.","He put it in his bag.","He got more apples.","One. Two. Three. Four. Five.","Five apples in his bag.","He paid at the store.","Then he went back home.","He had a good bag of apples."],
+    quiz:{ q:"How many apples did Johnny get?", opts:["Three","Four","Five","Six"], ans:2 }
   },
-  { day:3, title:"Johnny Goes Wild", emoji:"🤪", color:"#EF6C00", bg:"#FFF3E0",
-    keyWords:["wild","stop","plant","seeds","day"],
-    lines:["Johnny would not stop.","He could not stop all day.",'"I must plant more seeds!"',"Johnny went a little wild.","His hair was a mess.","His eyes were wide.",'"Plant! Plant! Plant!" he said.',"He ran from yard to yard.","He would plant all day.","He would plant all night.","Johnny was wild for seeds.","Wild for seeds all day.",'"More seeds!" he said.',"Johnny did not stop. Not once.","He had gone wild."],
-    quiz:{ q:"How did Johnny act?", opts:["Calm and slow","Wild and could not stop","Sleepy","Sad"], ans:1 }
+  { day:3, title:"The First Seed", emoji:"🌱", color:"#2E7D32", bg:"#E8F5E9",
+    keyWords:["seed","dig","soil","plant","grow"],
+    lines:["Johnny had one seed.","Just one small seed.","He went out to the yard.","He dug a small hole.","The soil was soft and dark.","He put the seed in the hole.","He covered it with soil.","He gave it some water.","Then he sat and looked at it.","Nothing yet.","He came back the next day.","Still nothing.","But Johnny did not give up.","He knew the seed was growing.","Down in the dark soil.","It just needed time."],
+    quiz:{ q:"What did Johnny do after putting the seed in the hole?", opts:["He dug it back up","He covered it with soil","He ate it","He walked away"], ans:1 }
   },
-  { day:4, title:"The Town Is Mad", emoji:"😠", color:"#C62828", bg:"#FFEBEE",
-    keyWords:["town","mad","trees","grew","road"],
-    lines:["The town was not happy.","The town was mad.","Trees grew in the road.","Trees grew by the doors.","Big trees. Tall trees.","They grew up fast.","A tree grew in the road.","No cars could get by.","The town was very mad.",'"Stop, Johnny!" said the town.',"Your trees were in the way.","Trees grew on every road.","The mad town had had enough.","Too many trees!"],
-    quiz:{ q:"Why was the town mad?", opts:["Trees were in the way","It was too cold","Johnny was nice","They had no apples"], ans:0 }
+  { day:4, title:"The Long Walk", emoji:"👟", color:"#1565C0", bg:"#E3F2FD",
+    keyWords:["walk","far","road","tired","keep"],
+    lines:["Johnny had a long walk ahead.","He had his bag of seeds.","He had his hat on his head.","He set off down the road.","The road was long.","It went up a hill.","It went down the other side.","Johnny kept going.","His feet got tired.","But he kept going.","He had seeds to plant.","He walked and walked.","Far down the road.","Past trees. Past farms.","Johnny did not stop.","He had a job to do."],
+    quiz:{ q:"What did Johnny carry on his walk?", opts:["A map","A bag of seeds","A bucket of water","An axe"], ans:1 }
   },
-  { day:5, title:"The Sheriff Comes", emoji:"🤠", color:"#4E342E", bg:"#EFEBE9",
-    keyWords:["stop","seeds","town","said","bad"],
-    lines:["A man came to town.","He was the sheriff.",'"Johnny, you must stop," he said.','"Stop with the seeds!"',"The town has too many trees.","Johnny did not want to stop.",'"But I love seeds," he said.','"Seeds are not bad," said Johnny.','"Yes, you are bad now," he said.',"You broke the law.","The town said it was bad.","Johnny would not stop.","So the sheriff got mad.",'"That is it, Johnny!" he said.'],
-    quiz:{ q:"What did the sheriff tell Johnny?", opts:["Plant more","Stop with the seeds","Go home and rest","Eat an apple"], ans:1 }
+  { day:5, title:"The Apple Tree Grows", emoji:"🌳", color:"#388E3C", bg:"#E8F5E9",
+    keyWords:["tree","grow","tall","green","leaves"],
+    lines:["One day, Johnny saw it.","A small green shoot.","It came up from the soil.","His seed had grown!","He gave it water.","He gave it sun.","Day by day it grew.","It got taller.","Green leaves came out.","One leaf. Then two. Then more.","The tree was growing.","Johnny smiled a big smile.","His tree was alive.","He had planted one seed.","And now he had a tree.","A real apple tree."],
+    quiz:{ q:"What came up from the soil?", opts:["A worm","A green shoot","A flower","A rock"], ans:1 }
   },
-  { day:6, title:"Off to Jail", emoji:"🚔", color:"#283593", bg:"#E8EAF6",
-    keyWords:["jail","took","seeds","sad","said"],
-    lines:["The sheriff took Johnny away.","He took him to jail.","Johnny was in a cell.","The jail was cold and gray.","No more seeds for you.","They took his bag of seeds.","Johnny felt sad.","Very sad.",'"I just love seeds," he said.','"I want my seeds back," he said.',"But the jail door was shut.","Johnny sat in jail.","He was sad and alone.",'"What did I do?" he said.'],
-    quiz:{ q:"Where did the sheriff take Johnny?", opts:["To the store","To jail","To the park","To his home"], ans:1 }
+  { day:6, title:"Sharing the Apples", emoji:"🤝", color:"#00695C", bg:"#E0F2F1",
+    keyWords:["share","give","friend","kind","happy"],
+    lines:["The tree had apples on it.","Big red apples.","Johnny picked one.","He ate it.","It was sweet and good.","Then he saw his friend.","His friend looked hungry.","Johnny picked two more apples.","He gave one to his friend.",'"Here," said Johnny. "Take this."',"His friend smiled.",'"Thank you," his friend said.',"Johnny felt good.","It felt good to share.","One apple for him.","One apple for his friend."],
+    quiz:{ q:"How did Johnny feel when he shared?", opts:["Sad","Angry","Good","Tired"], ans:2 }
   },
-  { day:7, title:"One Seed Left", emoji:"🌰", color:"#5D4037", bg:"#EFEBE9",
-    keyWords:["seed","jail","one","hid","plan"],
-    lines:["Johnny sat in his cell.","The jail was quiet.","He hid a seed in his coat.","There was one seed left!","Just one seed.","He had hid it well.","The sheriff did not find it.","Johnny had a plan.","A big plan.","He would plant the seed.","He hid the seed in the dirt.","Down in the jail floor.",'"Grow," said Johnny. "Grow."',"One seed. One plan.","Johnny would get out of jail."],
-    quiz:{ q:"What did Johnny still have?", opts:["A key","One seed","His bag","A map"], ans:1 }
+  { day:7, title:"More Seeds to Plant", emoji:"🌾", color:"#5D4037", bg:"#EFEBE9",
+    keyWords:["more","seeds","plant","field","work"],
+    lines:["Johnny had more seeds.","A whole bag of seeds.","He went to a big field.","The field was wide and flat.","He dug a hole.","He put a seed in.","He covered it up.","Then he dug another hole.","Another seed went in.","He did this again and again.","Dig. Plant. Cover. Move on.","Dig. Plant. Cover. Move on.","The field had lots of seeds now.","Johnny looked at the field.","One day this field would have trees.","Lots and lots of apple trees."],
+    quiz:{ q:"What did Johnny do again and again?", opts:["Run and jump","Dig, plant, cover, move on","Eat and sleep","Sing and dance"], ans:1 }
   },
-  { day:8, title:"The Tree Grows in Jail", emoji:"🌳", color:"#388E3C", bg:"#E8F5E9",
-    keyWords:["seed","tree","grew","tall","jail"],
-    lines:["The seed began to grow.","A small tree came up.","It grew in the jail floor.","Day by day it grew.","The tree got tall.","Tall and strong.","It grew up to the roof.","The tree was very tall now.","All from one small seed!","The tree grew more.","It pushed on the jail wall.","The seed had made a big tree.","A tall tree in the jail.","Johnny had a way out now."],
-    quiz:{ q:"What grew in the jail?", opts:["A flower","A tall tree","A weed","Nothing"], ans:1 }
+  { day:8, title:"The Cold Night", emoji:"❄️", color:"#283593", bg:"#E8EAF6",
+    keyWords:["cold","night","fire","warm","safe"],
+    lines:["The sun went down.","It got cold.","Very cold.","Johnny was far from home.","He found a spot under a tree.","He made a small fire.","The fire gave off light.","The fire gave off heat.","Johnny sat by the fire.","He felt warm now.","He ate an apple for his supper.","He looked up at the stars.","The stars were bright.","Johnny felt safe by his fire.","He went to sleep.","Tomorrow he would plant more seeds."],
+    quiz:{ q:"What did Johnny eat for supper?", opts:["Bread","Soup","An apple","A carrot"], ans:2 }
   },
-  { day:9, title:"The Big Break Out", emoji:"💥", color:"#D84315", bg:"#FBE9E7",
-    keyWords:["wall","tree","out","ran","free"],
-    lines:["The tree pushed hard.","It pushed on the wall.","Crack! went the wall.","The wall broke open.","Johnny saw a way out.","He went up the tree.","Up and up the tree.","He climbed out the hole.","Johnny was out!","He ran from the jail.","He ran and ran.","Johnny was free at last.","Free! Free! Free!","The tree broke him out.","Johnny ran far away, free."],
-    quiz:{ q:"How did Johnny get out?", opts:["He dug a hole","The tree broke the wall","He found a key","The door was open"], ans:1 }
+  { day:9, title:"A Forest of Apple Trees", emoji:"🌲", color:"#4527A0", bg:"#EDE7F6",
+    keyWords:["forest","trees","apples","grew","planted"],
+    lines:["Years went by.","Johnny planted seeds every day.","Every single day.","The seeds grew into trees.","The trees grew tall.","They were full of apples.","Red apples. Green apples.","Apples for everyone.","People came to pick them.","Kids came to eat them.","Birds came to sit in the trees.","Johnny walked through his trees.","He looked at all he had planted.","One seed at a time.","He had made a forest.","A forest of apple trees."],
+    quiz:{ q:"How did Johnny grow all those trees?", opts:["All at once","One seed at a time","With a big machine","By wishing"], ans:1 }
   },
-  { day:10, title:"Trent's Wild Story", emoji:"⭐", color:"#F9A825", bg:"#FFFDE7",
-    keyWords:["story","wild","you","made","Trent"],
-    lines:["This was a wild story, Trent.","You made it up.","You made Johnny go wild.","You sent him to jail.","Then you broke him out!","What a wild story.","Only you could think of it.","You made Johnny free.","It was your story, Trent.","A fun, wild story.","You read all ten days.","You did not stop.","Just like Johnny.","Be proud, Trent. You made this."],
-    quiz:{ q:"Who made up this wild story?", opts:["The sheriff","Johnny","Trent","A teacher"], ans:2 }
+  { day:10, title:"Trent's Story", emoji:"⭐", color:"#F9A825", bg:"#FFFDE7",
+    keyWords:["read","did","story","proud","Trent"],
+    lines:["This story started with you, Trent.","You wrote about Johnny.","You said Johnny always wanted apples.","That is why his name was Johnny Appleseed.","You said he went to the store.","He went to get the apples.","That was your story.","And it was a good story.","You gave Johnny his start.","You made him real.","Now you have read ten stories.","Ten whole stories.","You did not stop.","You kept going.","Just like Johnny.","Be proud, Trent. You did it."],
+    quiz:{ q:"Who wrote the first story about Johnny?", opts:["A teacher","A book","Trent","Johnny himself"], ans:2 }
   }
 ];
 
@@ -332,16 +332,13 @@ const PRON = {
   "why":["why","WY"], "wide":["wide","WYD"], "with":["with","WITH"],
   "work":["work","WURK"], "would":["would","WUUD"], "wrote":["wrote","ROHT"],
   "yard":["yard","YARD"], "years":["years","YEERZ"], "yet":["yet","YET"],
-  "you":["you","YOO"], "your":["your","YOR"],
-  /* --- Series 2: Johnny Goes Wild --- */
-  "town":["town","TOWN"], "shop":["shop","SHOP"], "park":["park","PARK"], "mess":["mess","MES"], "hair":["hair","HAIR"], "eyes":["eyes","EYEZ"], "ran":["ran","RAN"], "once":["once","WUNS"], "gone":["gone","GAWN"], "doors":["doors","DORZ"], "door":["door","DOR"], "cars":["cars","KARZ"], "enough":["e · nough","ee-NUF"], "man":["man","MAN"], "sheriff":["sher · iff","SHAIR-if"], "law":["law","LAW"], "yes":["yes","YES"], "took":["took","TUUK"], "cell":["cell","SEL"], "gray":["gray","GRAY"], "shut":["shut","SHUT"], "alone":["a · lone","uh-LOHN"], "quiet":["qui · et","KWY-ut"], "coat":["coat","KOHT"], "dirt":["dirt","DURT"], "find":["find","FYND"], "plan":["plan","PLAN"], "began":["be · gan","bee-GAN"], "strong":["strong","STRAWNG"], "roof":["roof","ROOF"], "wall":["wall","WAWL"], "pushed":["pushed","PUUSHT"], "crack":["crack","KRAK"], "climbed":["climbed","KLYMD"], "mad":["mad","MAD"], "jail":["jail","JAYL"], "hid":["hid","HID"], "fun":["fun","FUN"], "think":["think","THINGK"], "sent":["sent","SENT"], "must":["must","MUST"], "want":["want","WONT"], "little":["lit · tle","LIT-uhl"], "way":["way","WAY"], "watch":["watch","WOCH"], "hands":["hands","HANDZ"], "free":["free","FREE"], "broke":["broke","BROHK"], "open":["o · pen","OH-pun"], "fast":["fast","FAST"], "hard":["hard","HARD"], "wild":["wild","WYLD"], "go":["go","GOH"], "my":["my","MY"], "i":["I","EYE"], "love":["love","LUV"], "no":["no","NOH"], "too":["too","TOO"], "many":["man · y","MEN-ee"], "has":["has","HAZ"], "away":["a · way","uh-WAY"], "well":["well","WEL"], "only":["on · ly","OHN-lee"], "days":["days","DAYZ"], "what":["what","WUT"], "could":["could","KUUD"], "last":["last","LAST"], "sad":["sad","SAD"], "there":["there","THAIR"], "are":["are","AR"], "so":["so","SOH"],
-  "bad":["bad","BAD"], "floor":["floor","FLOR"], "over":["o · ver","OH-vur"]
+  "you":["you","YOO"], "your":["your","YOR"]
 };
 
 let userName="", completed=[], currentDay=null;
 let sigCanvas, sigCtx, drawing=false, hasSig=false;
 let checks=[false,false,false], quizDone=false;
-const KEY='trent_reading_wild_v1';
+const KEY='trent_reading_v1';
 
 /* ---------- SPEECH (phone's built-in voice, Web Speech API) ---------- */
 let ttsVoice=null;
