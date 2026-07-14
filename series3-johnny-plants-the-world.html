@@ -27,12 +27,15 @@
   .name-input:focus { border-color:var(--gold); }
   .start-btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:16px; padding:18px 44px; font-family:inherit; font-size:24px; font-weight:900; cursor:pointer; box-shadow:0 6px 24px rgba(249,168,37,0.45); transition:transform 0.15s; }
   .start-btn:active { transform:scale(0.96); }
+  .menu-link { display:inline-block; margin-top:24px; color:rgba(255,255,255,0.85); font-size:15px; font-weight:800; text-decoration:none; padding:10px 18px; border-radius:12px; border:2px solid rgba(255,255,255,0.3); }
+  .home-btn { background:rgba(255,255,255,0.18); border:2px solid rgba(255,255,255,0.3); color:white; border-radius:12px; width:44px; height:44px; font-size:20px; cursor:pointer; text-decoration:none; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
   /* MAP */
   #map { background:var(--bg); }
   .map-header { background:linear-gradient(135deg,#1B5E20,#388E3C); padding:20px 20px 16px; color:white; box-shadow:0 4px 16px rgba(27,94,32,0.3); }
   .map-header-top { display:flex; align-items:center; gap:14px; margin-bottom:10px; }
   .map-avatar { font-size:36px; }
+  .map-hd { flex:1; }
   .map-hd h2 { font-size:20px; font-weight:900; }
   .map-hd p { font-size:13px; opacity:0.85; font-weight:600; }
   .prog-wrap { background:rgba(255,255,255,0.25); border-radius:20px; height:10px; overflow:hidden; }
@@ -154,6 +157,7 @@
     <input class="name-input" id="nameInput" type="text" placeholder="Type your name..." maxlength="30" autocomplete="off">
   </div>
   <button class="start-btn" onclick="startApp()">Let's Go! 🌍</button>
+  <a class="menu-link" href="index.html">🏠 Back to Menu</a>
 </div>
 
 <!-- MAP -->
@@ -165,6 +169,7 @@
         <h2 id="mapName">Reading Adventure</h2>
         <p id="mapProg">0 of 10 days done</p>
       </div>
+      <a class="home-btn" href="index.html" title="Menu">🏠</a>
     </div>
     <div class="prog-wrap"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
   </div>

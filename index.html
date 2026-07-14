@@ -3,543 +3,125 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Trent's Reading Adventure</title>
+<title>Trent's Adventure</title>
 <style>
-  :root {
-    --green:#388E3C; --green-dark:#1B5E20; --green-light:#E8F5E9;
-    --gold:#F9A825; --red:#C62828; --muted:#6B7280; --bg:#F1F8E9;
-  }
+  :root { --gold:#F9A825; --green:#388E3C; --blue:#1565C0; }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-  body { font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); color:#1A1A1A; min-height:100vh; overflow-x:hidden; }
-  .screen { display:none; min-height:100vh; }
-  .screen.active { display:flex; flex-direction:column; }
+  body { font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+         background:linear-gradient(160deg,#0D3B1E 0%,#14532D 45%,#0D47A1 100%);
+         min-height:100vh; color:white; display:flex; flex-direction:column;
+         align-items:center; justify-content:center; padding:36px 22px; text-align:center; }
+  .hi { font-size:64px; margin-bottom:6px; animation:float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+  h1 { font-size:36px; font-weight:900; line-height:1.15; margin-bottom:6px; text-shadow:0 4px 12px rgba(0,0,0,0.35); }
+  .sub { font-size:18px; font-weight:700; color:rgba(255,255,255,0.85); margin-bottom:34px; }
 
-  /* HOME */
-  #home { background:linear-gradient(160deg,#1B5E20 0%,#2E7D32 55%,#43A047 100%); align-items:center; justify-content:center; padding:40px 24px; text-align:center; position:relative; overflow:hidden; }
-  .home-icon { font-size:90px; margin-bottom:12px; animation:float 3s ease-in-out infinite; }
-  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
-  .home-title { font-size:38px; font-weight:900; color:white; line-height:1.15; margin-bottom:6px; text-shadow:0 4px 12px rgba(0,0,0,0.3); }
-  .home-sub { font-size:17px; color:rgba(255,255,255,0.85); margin-bottom:32px; font-weight:700; }
-  .home-card { background:rgba(255,255,255,0.13); border-radius:20px; padding:22px; width:100%; max-width:360px; border:2px solid rgba(255,255,255,0.22); margin-bottom:22px; }
-  .name-label { color:rgba(255,255,255,0.9); font-size:15px; font-weight:800; margin-bottom:10px; display:block; text-align:left; }
-  .name-input { width:100%; padding:14px 18px; border-radius:14px; border:2px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.18); color:white; font-family:inherit; font-size:20px; font-weight:800; outline:none; text-align:center; }
-  .name-input::placeholder { color:rgba(255,255,255,0.45); }
-  .name-input:focus { border-color:var(--gold); }
-  .start-btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:16px; padding:18px 44px; font-family:inherit; font-size:24px; font-weight:900; cursor:pointer; box-shadow:0 6px 24px rgba(249,168,37,0.45); transition:transform 0.15s; }
-  .start-btn:active { transform:scale(0.96); }
+  .cards { display:flex; flex-direction:column; gap:18px; width:100%; max-width:400px; }
+  .pick { display:block; text-decoration:none; color:#1A1A1A; background:white; border-radius:24px;
+          padding:24px 22px; box-shadow:0 10px 30px rgba(0,0,0,0.3); border:5px solid transparent;
+          transition:transform 0.15s; text-align:left; }
+  .pick:active { transform:scale(0.97); }
+  .pick.reading { border-color:var(--green); }
+  .pick.math { border-color:var(--blue); }
+  .pick-top { display:flex; align-items:center; gap:16px; }
+  .pick-emoji { font-size:52px; flex-shrink:0; }
+  .pick-t { flex:1; }
+  .pick-t h2 { font-size:28px; font-weight:900; line-height:1.1; }
+  .pick-t p { font-size:15px; font-weight:700; color:#6B7280; margin-top:3px; }
+  .pick-go { font-size:30px; font-weight:900; color:#CBD5E1; }
 
-  /* MAP */
-  #map { background:var(--bg); }
-  .map-header { background:linear-gradient(135deg,#1B5E20,#388E3C); padding:20px 20px 16px; color:white; box-shadow:0 4px 16px rgba(27,94,32,0.3); }
-  .map-header-top { display:flex; align-items:center; gap:14px; margin-bottom:10px; }
-  .map-avatar { font-size:36px; }
-  .map-hd h2 { font-size:20px; font-weight:900; }
-  .map-hd p { font-size:13px; opacity:0.85; font-weight:600; }
-  .prog-wrap { background:rgba(255,255,255,0.25); border-radius:20px; height:10px; overflow:hidden; }
-  .prog-fill { height:100%; background:var(--gold); border-radius:20px; transition:width 0.6s ease; }
-  .map-scroll { flex:1; overflow-y:auto; padding:20px 18px 40px; }
-  .map-title { font-size:20px; font-weight:900; color:var(--green-dark); margin-bottom:16px; text-align:center; }
-  .day-card { display:flex; align-items:center; gap:14px; background:white; border-radius:16px; padding:14px 16px; margin-bottom:12px; box-shadow:0 3px 12px rgba(0,0,0,0.07); cursor:pointer; border:3px solid transparent; transition:transform 0.15s,border-color 0.2s; position:relative; }
-  .day-card:active { transform:scale(0.98); }
-  .day-card.locked { opacity:0.4; cursor:not-allowed; }
-  .day-card.done { border-color:var(--green); }
-  .day-card.done::after { content:'✓'; position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:24px; color:var(--green); font-weight:900; }
-  .day-card.current { border-color:var(--gold); box-shadow:0 4px 18px rgba(249,168,37,0.28); }
-  .day-num { width:50px; height:50px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:white; flex-shrink:0; }
-  .day-info h3 { font-size:17px; font-weight:800; margin-bottom:2px; }
-  .day-info p { font-size:12px; color:var(--muted); font-weight:600; }
-  .day-emoji { font-size:26px; margin-left:auto; margin-right:32px; }
+  .bar-wrap { margin-top:16px; }
+  .bar-lbl { display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:#6B7280; margin-bottom:6px; }
+  .bar { background:#E2E8F0; border-radius:20px; height:12px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:20px; transition:width 0.6s ease; }
+  .pick.reading .bar-fill { background:var(--green); }
+  .pick.math .bar-fill { background:var(--blue); }
+  .done-tag { color:var(--gold); }
 
-  /* STORY */
-  #story { background:white; }
-  .story-hdr { padding:16px 18px; display:flex; align-items:center; gap:12px; border-bottom:2px solid #F0F4F8; position:sticky; top:0; background:white; z-index:10; }
-  .back-btn { width:42px; height:42px; border-radius:12px; border:none; background:#F0F4F8; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .back-btn:active { background:#E2E8F0; }
-  .shdr-info { flex:1; }
-  .s-day-tag { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
-  .s-title { font-size:19px; font-weight:900; line-height:1.2; }
-  .s-emoji { font-size:34px; }
-  .story-body { padding:22px 22px 48px; flex:1; }
-
-  .kw-box { border-radius:14px; padding:12px 16px; margin-bottom:14px; border-left:5px solid #388E3C; }
-  .kw-lbl { font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
-  .kw-list { display:flex; flex-wrap:wrap; gap:8px; }
-  .kw-chip { padding:6px 14px; border-radius:20px; font-size:16px; font-weight:800; color:white; }
-
-  .tap-tip { background:#E8F5E9; border-radius:12px; padding:10px 14px; margin-bottom:22px; font-size:14px; font-weight:700; color:var(--green-dark); text-align:center; }
-
-  .s-line { font-size:22px; font-weight:600; line-height:2; margin-bottom:4px; padding:2px 6px; border-radius:6px; }
-  .word { cursor:pointer; border-radius:4px; padding:0 1px; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
-  .word:active { background:rgba(56,142,60,0.20); }
-  .s-line .hl { background:rgba(249,168,37,0.38); border-radius:4px; padding:0 3px; font-weight:900; }
-
-  /* WORD POPUP */
-  .wpop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:500; padding:24px; }
-  .wpop.show { display:flex; }
-  .wpop-card { background:white; border-radius:24px; padding:32px 28px 22px; text-align:center; max-width:340px; width:100%; box-shadow:0 14px 44px rgba(0,0,0,0.35); }
-  .wpop-word { font-size:42px; font-weight:900; color:#1A1A1A; margin-bottom:14px; word-break:break-word; }
-  .wpop-syl { font-size:30px; font-weight:800; color:var(--green); letter-spacing:1px; margin-bottom:6px; }
-  .wpop-say { font-size:24px; font-weight:800; color:#E65100; margin-bottom:22px; }
-  .wpop-spk { background:var(--green); color:white; border:none; border-radius:16px; padding:16px 32px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; box-shadow:0 5px 16px rgba(56,142,60,0.4); }
-  .wpop-spk:active { transform:scale(0.96); }
-  .wpop-close { margin-top:16px; font-size:13px; color:#9CA3AF; font-weight:700; }
-
-  .sec { margin-top:26px; padding-top:22px; border-top:2px solid #F0F4F8; }
-  .sec-title { font-size:21px; font-weight:900; margin-bottom:4px; }
-  .sec-sub { font-size:14px; color:var(--muted); font-weight:600; margin-bottom:16px; }
-  .quiz-q { font-size:18px; font-weight:800; margin-bottom:12px; }
-  .quiz-opts { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
-  .qopt { padding:15px 18px; border-radius:13px; border:3px solid #E2E8F0; background:white; font-family:inherit; font-size:17px; font-weight:700; cursor:pointer; text-align:left; transition:all 0.15s; }
-  .qopt:active { transform:scale(0.98); }
-  .qopt.correct { background:#E8F5E9; border-color:var(--green); color:var(--green-dark); }
-  .qopt.wrong { background:#FFEBEE; border-color:var(--red); color:var(--red); }
-  .qopt.disabled { cursor:default; }
-  .quiz-fb { font-size:17px; font-weight:800; min-height:24px; margin-bottom:12px; }
-  .quiz-fb.good { color:var(--green); }
-  .quiz-fb.bad { color:var(--red); }
-
-  .chk-item { display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:13px; border:3px solid #E2E8F0; margin-bottom:10px; cursor:pointer; transition:all 0.2s; font-size:17px; font-weight:700; background:white; }
-  .chk-item.checked { border-color:var(--green); background:#E8F5E9; }
-  .chk-box { width:30px; height:30px; border-radius:8px; border:3px solid #CBD5E1; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; transition:all 0.2s; background:white; }
-  .chk-item.checked .chk-box { background:var(--green); border-color:var(--green); color:white; }
-
-  .sig-wrap { margin-top:18px; }
-  .sig-lbl { font-size:13px; font-weight:800; margin-bottom:8px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
-  .sig-cw { border:3px solid #E2E8F0; border-radius:14px; overflow:hidden; background:#FAFAFA; position:relative; }
-  canvas { display:block; touch-action:none; }
-  .sig-hint { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#CBD5E1; font-size:16px; font-weight:700; pointer-events:none; transition:opacity 0.3s; text-align:center; }
-  .sig-clear { margin-top:8px; background:none; border:2px solid #E2E8F0; border-radius:10px; padding:7px 14px; font-family:inherit; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer; }
-
-  .finish-btn { width:100%; margin-top:20px; padding:18px; border:none; border-radius:16px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; transition:transform 0.15s,opacity 0.2s; color:white; box-shadow:0 6px 18px rgba(0,0,0,0.15); }
-  .finish-btn:disabled { opacity:0.35; cursor:not-allowed; }
-  .finish-btn:not(:disabled):active { transform:scale(0.97); }
-
-  /* CELEBRATE */
-  #celebrate { background:linear-gradient(160deg,#1B5E20 0%,#2E7D32 55%,#43A047 100%); align-items:center; justify-content:center; text-align:center; padding:40px 24px; }
-  .cel-icon { font-size:96px; animation:bounce 0.6s ease infinite alternate; }
-  @keyframes bounce { from{transform:scale(1)} to{transform:scale(1.15)} }
-  .cel-stars { font-size:34px; margin:10px 0; }
-  .cel-title { font-size:44px; font-weight:900; color:var(--gold); margin-bottom:8px; text-shadow:0 4px 12px rgba(0,0,0,0.3); }
-  .cel-name { font-size:26px; color:white; font-weight:900; margin-bottom:10px; }
-  .cel-msg { font-size:19px; color:rgba(255,255,255,0.9); font-weight:600; margin-bottom:32px; line-height:1.6; white-space:pre-line; }
-  .cel-btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:16px; padding:16px 36px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; box-shadow:0 6px 24px rgba(249,168,37,0.4); transition:transform 0.15s; }
-  .cel-btn:active { transform:scale(0.96); }
-
-  .toast { position:fixed; top:16px; right:16px; background:#1B5E20; color:white; padding:10px 18px; border-radius:12px; font-size:14px; font-weight:800; z-index:999; opacity:0; transition:opacity 0.3s; pointer-events:none; }
-  .toast.show { opacity:1; }
+  .foot { margin-top:32px; font-size:15px; font-weight:700; color:rgba(255,255,255,0.75); line-height:1.6; }
 </style>
 </head>
 <body>
 
-<div class="toast" id="toast">✅ Progress Saved!</div>
+  <div class="hi" id="hi">🌟</div>
+  <h1 id="title">Trent's Adventure</h1>
+  <p class="sub">Pick what you want to do today</p>
 
-<!-- WORD POPUP (tap a word to see syllables + sound-it-out + hear it) -->
-<div class="wpop" id="wpop">
-  <div class="wpop-card" id="wpopCard">
-    <div class="wpop-word" id="wpWord"></div>
-    <div class="wpop-syl" id="wpSyl"></div>
-    <div class="wpop-say" id="wpSay"></div>
-    <button class="wpop-spk" id="wpSpk">🔊 Hear it</button>
-    <div class="wpop-close">tap anywhere to close</div>
-  </div>
-</div>
-
-<!-- HOME -->
-<div id="home" class="screen active">
-  <div class="home-icon">🌍</div>
-  <h1 class="home-title">Trent's Reading<br>Adventure</h1>
-  <p class="home-sub">Johnny Plants the World • 10 Days</p>
-  <div class="home-card">
-    <label class="name-label">What is your name?</label>
-    <input class="name-input" id="nameInput" type="text" placeholder="Type your name..." maxlength="30" autocomplete="off">
-  </div>
-  <button class="start-btn" onclick="startApp()">Let's Go! 🌍</button>
-</div>
-
-<!-- MAP -->
-<div id="map" class="screen">
-  <div class="map-header">
-    <div class="map-header-top">
-      <div class="map-avatar">🌍</div>
-      <div class="map-hd">
-        <h2 id="mapName">Reading Adventure</h2>
-        <p id="mapProg">0 of 10 days done</p>
+  <div class="cards">
+    <a class="pick reading" id="readCard" href="series3-johnny-plants-the-world.html">
+      <div class="pick-top">
+        <div class="pick-emoji">📖</div>
+        <div class="pick-t">
+          <h2>Reading</h2>
+          <p id="readSub">Johnny Plants the World • 10 Days</p>
+        </div>
+        <div class="pick-go">➜</div>
       </div>
-    </div>
-    <div class="prog-wrap"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
-  </div>
-  <div class="map-scroll">
-    <div class="map-title">Choose Today's Story 🌍</div>
-    <div id="dayList"></div>
-  </div>
-</div>
+      <div class="bar-wrap">
+        <div class="bar-lbl"><span id="readProg">0 of 10 days done</span><span id="readDone"></span></div>
+        <div class="bar"><div class="bar-fill" id="readFill" style="width:0%"></div></div>
+      </div>
+    </a>
 
-<!-- STORY -->
-<div id="story" class="screen">
-  <div class="story-hdr">
-    <button class="back-btn" onclick="showMap()">←</button>
-    <div class="shdr-info">
-      <div class="s-day-tag" id="sDayTag"></div>
-      <div class="s-title" id="sTitle"></div>
-    </div>
-    <div class="s-emoji" id="sEmoji"></div>
+    <a class="pick math" id="mathCard" href="math.html">
+      <div class="pick-top">
+        <div class="pick-emoji">➕</div>
+        <div class="pick-t">
+          <h2>Math</h2>
+          <p id="mathSub">Add &amp; Take Away • 10 Days</p>
+        </div>
+        <div class="pick-go">➜</div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-lbl"><span id="mathProg">0 of 10 days done</span><span id="mathDone"></span></div>
+        <div class="bar"><div class="bar-fill" id="mathFill" style="width:0%"></div></div>
+      </div>
+    </a>
   </div>
-  <div class="story-body" id="storyBody"></div>
-</div>
 
-<!-- CELEBRATE -->
-<div id="celebrate" class="screen">
-  <div class="cel-icon">🏆</div>
-  <div class="cel-stars">⭐ ⭐ ⭐</div>
-  <div class="cel-title">You Did It!</div>
-  <div class="cel-name" id="celName"></div>
-  <div class="cel-msg" id="celMsg"></div>
-  <button class="cel-btn" onclick="showMap()">Back to My Days 🗺️</button>
-</div>
+  <div class="foot">Do one a day.<br>You do not have to do both. 👊</div>
 
 <script>
-const STORIES = [
-  { day:1, title:"Free in the Woods", emoji:"🌲", color:"#1B5E20", bg:"#E8F5E9",
-    keyWords:["free","woods","trees","safe","hid"],
-    lines:["Johnny ran from the jail.","He ran to the deep woods.","The woods were dark and cool.","Johnny was free at last.","Free! No jail. No sheriff.","He hid in the tall trees.","The trees kept him safe.","He hid where no one looked.","He hid all day and night.","Trees do not lock you up.",'"Trees are safe," said Johnny.','"Safe like a big green wall."',"The woods were his home now.","Johnny was free in the woods."],
-    quiz:{ q:"Where did Johnny hide?", opts:["In the deep woods","In a shop","In the jail","In the sea"], ans:0 }
-  },
-  { day:2, title:"A Big Bad Plan", emoji:"🧠", color:"#6A1B9A", bg:"#F3E5F5",
-    keyWords:["plan","people","trees","bad","new"],
-    lines:["Johnny sat down to think.","He had a big new plan.","People put him in jail.","People were bad to him.",'"People are bad," said Johnny.','"But trees are good," he said.',"Trees do not yell or hit.","Trees are kind. Trees are still.",'"I have a plan," said Johnny.',"A big, bad, wild plan.","No more people on this land.","Just trees where the people were.","A new world. A new plan.","It was a bad, bold plan.","But Johnny liked it a lot.","He would start with one new seed."],
-    quiz:{ q:"What was Johnny's plan?", opts:["Plant one small tree","No more people, just trees","Move to a big city","Say sorry to the town"], ans:1 }
-  },
-  { day:3, title:"The Strange Seed", emoji:"🌰", color:"#5D4037", bg:"#EFEBE9",
-    keyWords:["seed","grew","fast","roots","deep"],
-    lines:["Johnny made one strange seed.","He held it in his hand.","This seed grew very fast.","Fast as a blink.","He put the seed in dirt.","The seed grew right away.","It grew fast. It grew deep.","Roots went deep in the ground.","The roots went far and wide.","Roots ran under the whole yard.","A tall tree stood up fast.","It grew all night long.","One seed. Deep roots. One tree.","Johnny smiled at his wild tree.","Now he had lots more.","The plan had begun."],
-    quiz:{ q:"What was strange about the seed?", opts:["It grew very fast","It was red","It could talk","It was cold"], ans:0 }
-  },
-  { day:4, title:"Trees Take the Town", emoji:"🌳", color:"#2E7D32", bg:"#E8F5E9",
-    keyWords:["town","trees","took","roots","ran"],
-    lines:["Johnny went back to town.","He put his seeds all over.","Then the trees came up fast.","Trees in the road and yard.","Roots took the whole main street.","Roots took the shop and school.","The trees took the town hall.","People ran from the trees.","They ran up the hill.","They ran and did not stop.","Roots took the last house.","The town was full of trees.","Roots under every step.","The town belonged to Johnny.","People ran far away.","No one was left in town."],
-    quiz:{ q:"What did the people do?", opts:["They ran away","They sat down","They ate an apple","They went to sleep"], ans:0 }
-  },
-  { day:5, title:"No People Left", emoji:"🤫", color:"#37474F", bg:"#ECEFF1",
-    keyWords:["people","gone","quiet","won","still"],
-    lines:["The town was full of trees.","But the people were gone.","All gone. Every one.","No people on the street.","No people in the shop.","The kids were gone too.","The town was very quiet.","Quiet as a stone.","Nothing moved. Nothing made a sound.","The trees stood still and tall.","Still and green and quiet.",'"I won," said Johnny. "I won."','"The trees won. People lost."',"He had won the whole town.","But the town was too quiet.","Johnny sat down. All still."],
-    quiz:{ q:"What was the town like with no people?", opts:["Loud and busy","Very quiet","Full of cars","Warm and happy"], ans:1 }
-  },
-  { day:6, title:"Trees Can Not Talk", emoji:"💬", color:"#00695C", bg:"#E0F2F1",
-    keyWords:["tree","talk","laugh","name","alone"],
-    lines:["Johnny sat by a tree.",'"Hi," said Johnny to the tree.',"The tree did not talk.","It did not talk at all.","Johnny told a funny joke.","The tree did not laugh.","A tree can not laugh.","It can not talk back.","It can not say his name.","No one said his name now.","Trees do not know your name.","Johnny sat alone all day.","Alone in a sea of green.","He missed the sound of a laugh.","He missed his own name.","Johnny was all alone."],
-    quiz:{ q:"Why was Johnny sad?", opts:["The trees would not talk","He was cold","He lost his hat","He had no seeds"], ans:0 }
-  },
-  { day:7, title:"Not a Friend", emoji:"😢", color:"#1565C0", bg:"#E3F2FD",
-    keyWords:["friend","help","cry","cold","wrong"],
-    lines:["The trees gave lots of shade.","But a tree is not a friend.","A friend can hold your hand.","A friend can help you up.","A tree can not help you.","It can not help at all.","Johnny fell and hurt his knee.","No one came to help him.","He began to cry.","Johnny would cry and cry.","The night was cold and long.","Cold with no one to hold.","So cold. So still. So sad.",'"My plan was wrong," he said.','"All wrong. I was so wrong."',"He wanted one friend back."],
-    quiz:{ q:"What did Johnny learn?", opts:["A tree can be a friend","A tree is not a friend","Trees can talk","He should plant more"], ans:1 }
-  },
-  { day:8, title:"Come Back!", emoji:"📣", color:"#EF6C00", bg:"#FFF3E0",
-    keyWords:["call","come","back","sorry","town"],
-    lines:["Johnny walked up the big hill.","The people were up there.","He would call them back.",'"Come back!" he would call.','"Come back to town!"',"He was so sorry now.",'"I am sorry," said Johnny.','"I am so sorry. Come home."','"The town is your town."','"Not my town. Your town."','"Please come back," said Johnny.',"The people did not talk.","Would they come back?","Johnny would wait and call.","He would call all day.","He would call, and hope."],
-    quiz:{ q:"What did Johnny say to the people?", opts:["Go away and stay away","I am sorry, come back","I won and you lost","Plant more seeds for me"], ans:1 }
-  },
-  { day:9, title:"People and Trees", emoji:"🤝", color:"#388E3C", bg:"#E8F5E9",
-    keyWords:["plant","both","hands","help","home"],
-    lines:["The people came down the hill.","They looked at all the trees.","Johnny gave them each a seed.",'"Let us plant them," he said.',"They would plant them side by side.","People and trees. Both here.","Both can live in this town.","Trees give shade. People give help.","They dug with their hands.","Hands in the good, dark dirt.","Small hands and big hands.","They would help each other.","Help is what friends do.","The town was a home again.","Home for the trees. Home for all.","Both at home. Plant and grow."],
-    quiz:{ q:"How did the story end?", opts:["People and trees live as one","Johnny went back to jail","The trees all fell down","The people left for good"], ans:0 }
-  },
-  { day:10, title:"Trent's Big Idea", emoji:"⭐", color:"#F9A825", bg:"#FFFDE7",
-    keyWords:["Trent","story","made","trees","you"],
-    lines:["This was your story, Trent.","You made it up.","You made Johnny plant the town.","You made the trees take over.","Trees for the human race!","Only Trent would think of that.","But you gave it a good end.","People and trees, side by side.","That is a smart story, Trent.","A wild story with a big heart.","You read all ten days.","Not one day was left out.","Trent made this whole story.","Be proud, Trent. It is yours."],
-    quiz:{ q:"Who made up this story?", opts:["Johnny","The sheriff","Trent","The trees"], ans:2 }
-  }
-];
-
 /* ---------------------------------------------------------------------------
-   PRONUNCIATION DICTIONARY
-   Every word that appears in the 10 stories is hand-listed here so the
-   syllable break + sound-it-out never depends on a guessing algorithm.
-   Format:  "word": [ "syl · la · bles", "SOUND-it-out" ]
-   - syllables use " · " between chunks (single-syllable words have no dots)
-   - the CAPS chunk in sound-it-out is the part you say loudest (the stress)
-   To add a new 10-unit series: add that series' new words here the same way.
-   Any word NOT listed still works — it falls back to an automatic syllable
-   split and is still read aloud by the phone's voice.
+   THE MENU — this is what Trent lands on from the texted link.
+   Pick Reading or Math, then he sees that app's 10 days.
+
+   To point Reading at a different series later, change these two lines
+   (the file it opens + the save key it reads progress from):
 --------------------------------------------------------------------------- */
-const PRON = {
-  "a":["a","uh"], "about":["a · bout","uh-BOWT"], "again":["a · gain","uh-GEN"],
-  "ahead":["a · head","uh-HED"], "alive":["a · live","uh-LYV"], "all":["all","AWL"],
-  "always":["al · ways","AWL-wayz"], "an":["an","AN"], "and":["and","AND"],
-  "another":["a · noth · er","uh-NUH-thur"], "apple":["ap · ple","AP-uhl"],
-  "apples":["ap · ples","AP-uhlz"], "appleseed":["Ap · ple · seed","AP-uhl-seed"],
-  "at":["at","AT"], "ate":["ate","AYT"], "back":["back","BAK"], "bag":["bag","BAG"],
-  "be":["be","BEE"], "big":["big","BIG"], "birds":["birds","BURDZ"],
-  "bright":["bright","BRYT"], "but":["but","BUT"], "buy":["buy","BY"], "by":["by","BY"],
-  "came":["came","KAYM"], "cold":["cold","KOHLD"], "cover":["cov · er","KUH-vur"],
-  "covered":["cov · ered","KUH-vurd"], "dark":["dark","DARK"], "day":["day","DAY"],
-  "did":["did","DID"], "dig":["dig","DIG"], "do":["do","DOO"], "down":["down","DOWN"],
-  "dug":["dug","DUG"], "eat":["eat","EET"], "every":["ev · ery","EV-ree"],
-  "everyone":["ev · ery · one","EV-ree-wun"], "far":["far","FAR"], "farms":["farms","FARMZ"],
-  "feet":["feet","FEET"], "felt":["felt","FELT"], "field":["field","FEELD"],
-  "fire":["fire","FYR"], "five":["five","FYV"], "flat":["flat","FLAT"], "for":["for","FOR"],
-  "forest":["for · est","FOR-est"], "found":["found","FOWND"], "four":["four","FOR"],
-  "friend":["friend","FREND"], "from":["from","FRUM"], "full":["full","FUL"],
-  "gave":["gave","GAYV"], "get":["get","GET"], "give":["give","GIV"],
-  "going":["go · ing","GOH-ing"], "good":["good","GUUD"], "got":["got","GOT"],
-  "green":["green","GREEN"], "grew":["grew","GROO"], "grow":["grow","GROH"],
-  "growing":["grow · ing","GROH-ing"], "grown":["grown","GROHN"], "had":["had","HAD"],
-  "happy":["hap · py","HAP-ee"], "hat":["hat","HAT"], "have":["have","HAV"],
-  "he":["he","HEE"], "head":["head","HED"], "heat":["heat","HEET"], "here":["here","HEER"],
-  "hill":["hill","HIL"], "him":["him","HIM"], "his":["his","HIZ"], "hole":["hole","HOHL"],
-  "home":["home","HOHM"], "hungry":["hun · gry","HUNG-gree"], "in":["in","IN"],
-  "into":["in · to","IN-too"], "is":["is","IZ"], "it":["it","IT"], "job":["job","JOB"],
-  "johnny":["John · ny","JON-ee"], "just":["just","JUST"], "keep":["keep","KEEP"],
-  "kept":["kept","KEPT"], "kids":["kids","KIDZ"], "kind":["kind","KYND"],
-  "knew":["knew","NOO"], "leaf":["leaf","LEEF"], "leaves":["leaves","LEEVZ"],
-  "left":["left","LEFT"], "light":["light","LYT"], "like":["like","LYK"],
-  "long":["long","LONG"], "looked":["looked","LUUKT"], "lot":["lot","LOT"],
-  "lots":["lots","LOTS"], "loved":["loved","LUVD"], "made":["made","MAYD"],
-  "more":["more","MOR"], "move":["move","MOOV"], "name":["name","NAYM"],
-  "needed":["need · ed","NEE-did"], "next":["next","NEKST"], "night":["night","NYT"],
-  "not":["not","NOT"], "nothing":["noth · ing","NUTH-ing"], "now":["now","NOW"],
-  "of":["of","UV"], "off":["off","AWF"], "on":["on","ON"], "one":["one","WUN"],
-  "ones":["ones","WUNZ"], "other":["oth · er","UH-thur"], "out":["out","OWT"],
-  "paid":["paid","PAYD"], "past":["past","PAST"], "people":["peo · ple","PEE-puhl"],
-  "pick":["pick","PIK"], "picked":["picked","PIKT"], "plant":["plant","PLANT"],
-  "planted":["plant · ed","PLAN-tid"], "proud":["proud","PROWD"], "put":["put","PUUT"],
-  "read":["read","REED"], "real":["re · al","REE-uhl"], "red":["red","RED"],
-  "right":["right","RYT"], "road":["road","ROHD"], "round":["round","ROWND"],
-  "safe":["safe","SAYF"], "said":["said","SED"], "sat":["sat","SAT"], "saw":["saw","SAW"],
-  "seed":["seed","SEED"], "seeds":["seeds","SEEDZ"], "set":["set","SET"],
-  "share":["share","SHAIR"], "shoot":["shoot","SHOOT"], "side":["side","SYD"],
-  "single":["sin · gle","SING-guhl"], "sit":["sit","SIT"], "sleep":["sleep","SLEEP"],
-  "small":["small","SMAWL"], "smile":["smile","SMYL"], "smiled":["smiled","SMYLD"],
-  "soft":["soft","SOFT"], "soil":["soil","SOYL"], "some":["some","SUM"],
-  "spot":["spot","SPOT"], "stars":["stars","STARZ"], "start":["start","START"],
-  "started":["start · ed","STAR-tid"], "still":["still","STIL"], "stop":["stop","STOP"],
-  "store":["store","STOR"], "stories":["sto · ries","STOR-eez"], "story":["sto · ry","STOR-ee"],
-  "sun":["sun","SUN"], "supper":["sup · per","SUP-ur"], "sweet":["sweet","SWEET"],
-  "take":["take","TAYK"], "tall":["tall","TAWL"], "taller":["tall · er","TAW-lur"],
-  "ten":["ten","TEN"], "thank":["thank","THANK"], "that":["that","THAT"],
-  "the":["the","THUH"], "them":["them","THEM"], "then":["then","THEN"],
-  "they":["they","THAY"], "this":["this","THIS"], "three":["three","THREE"],
-  "through":["through","THROO"], "time":["time","TYM"], "tired":["tired","TYRD"],
-  "to":["to","TOO"], "tomorrow":["to · mor · row","tuh-MOR-oh"], "tree":["tree","TREE"],
-  "trees":["trees","TREEZ"], "trent":["Trent","TRENT"], "two":["two","TOO"],
-  "under":["un · der","UN-dur"], "up":["up","UP"], "very":["ver · y","VAIR-ee"],
-  "walk":["walk","WAWK"], "walked":["walked","WAWKT"], "wanted":["want · ed","WON-tid"],
-  "warm":["warm","WARM"], "was":["was","WUZ"], "water":["wa · ter","WAW-tur"],
-  "went":["went","WENT"], "were":["were","WUR"], "whole":["whole","HOHL"],
-  "why":["why","WY"], "wide":["wide","WYD"], "with":["with","WITH"],
-  "work":["work","WURK"], "would":["would","WUUD"], "wrote":["wrote","ROHT"],
-  "yard":["yard","YARD"], "years":["years","YEERZ"], "yet":["yet","YET"],
-  "you":["you","YOO"], "your":["your","YOR"],
-  /* --- Series 2: Johnny Goes Wild --- */
-  "town":["town","TOWN"], "shop":["shop","SHOP"], "park":["park","PARK"], "mess":["mess","MES"], "hair":["hair","HAIR"], "eyes":["eyes","EYEZ"], "ran":["ran","RAN"], "once":["once","WUNS"], "gone":["gone","GAWN"], "doors":["doors","DORZ"], "door":["door","DOR"], "cars":["cars","KARZ"], "enough":["e · nough","ee-NUF"], "man":["man","MAN"], "sheriff":["sher · iff","SHAIR-if"], "law":["law","LAW"], "yes":["yes","YES"], "took":["took","TUUK"], "cell":["cell","SEL"], "gray":["gray","GRAY"], "shut":["shut","SHUT"], "alone":["a · lone","uh-LOHN"], "quiet":["qui · et","KWY-ut"], "coat":["coat","KOHT"], "dirt":["dirt","DURT"], "find":["find","FYND"], "plan":["plan","PLAN"], "began":["be · gan","bee-GAN"], "strong":["strong","STRAWNG"], "roof":["roof","ROOF"], "wall":["wall","WAWL"], "pushed":["pushed","PUUSHT"], "crack":["crack","KRAK"], "climbed":["climbed","KLYMD"], "mad":["mad","MAD"], "jail":["jail","JAYL"], "hid":["hid","HID"], "fun":["fun","FUN"], "think":["think","THINGK"], "sent":["sent","SENT"], "must":["must","MUST"], "want":["want","WONT"], "little":["lit · tle","LIT-uhl"], "way":["way","WAY"], "watch":["watch","WOCH"], "hands":["hands","HANDZ"], "free":["free","FREE"], "broke":["broke","BROHK"], "open":["o · pen","OH-pun"], "fast":["fast","FAST"], "hard":["hard","HARD"], "wild":["wild","WYLD"], "go":["go","GOH"], "my":["my","MY"], "i":["I","EYE"], "love":["love","LUV"], "no":["no","NOH"], "too":["too","TOO"], "many":["man · y","MEN-ee"], "has":["has","HAZ"], "away":["a · way","uh-WAY"], "well":["well","WEL"], "only":["on · ly","OHN-lee"], "days":["days","DAYZ"], "what":["what","WUT"], "could":["could","KUUD"], "last":["last","LAST"], "sad":["sad","SAD"], "there":["there","THAIR"], "are":["are","AR"], "so":["so","SOH"],
-  "bad":["bad","BAD"], "floor":["floor","FLOR"], "over":["o · ver","OH-vur"],
-  /* --- Series 3: Johnny Plants the World --- */
-  "am":["am","AM"], "as":["as","AZ"], "begun":["be · gun","bee-GUN"],
-  "belonged":["be · longed","bee-LONGD"], "blink":["blink","BLINGK"], "bold":["bold","BOHLD"],
-  "both":["both","BOHTH"], "call":["call","KAWL"], "can":["can","KAN"],
-  "come":["come","KUM"], "cool":["cool","KOOL"], "cry":["cry","KRY"],
-  "deep":["deep","DEEP"], "each":["each","EECH"], "end":["end","END"],
-  "fell":["fell","FEL"], "friends":["friends","FRENDZ"], "funny":["fun · ny","FUN-ee"],
-  "ground":["ground","GROWND"], "hall":["hall","HAWL"], "hand":["hand","HAND"],
-  "heart":["heart","HART"], "held":["held","HELD"], "help":["help","HELP"],
-  "hi":["hi","HY"], "hit":["hit","HIT"], "hold":["hold","HOHLD"],
-  "hope":["hope","HOHP"], "house":["house","HOWS"], "human":["hu · man","HYOO-mun"],
-  "hurt":["hurt","HURT"], "joke":["joke","JOHK"], "knee":["knee","NEE"],
-  "know":["know","NOH"], "land":["land","LAND"], "laugh":["laugh","LAF"],
-  "let":["let","LET"], "liked":["liked","LYKT"], "live":["live","LIV"],
-  "lock":["lock","LOK"], "lost":["lost","LAWST"], "main":["main","MAYN"],
-  "missed":["missed","MIST"], "moved":["moved","MOOVD"], "new":["new","NOO"],
-  "or":["or","OR"], "own":["own","OHN"], "please":["please","PLEEZ"],
-  "race":["race","RAYS"], "roots":["roots","ROOTS"], "say":["say","SAY"],
-  "school":["school","SKOOL"], "sea":["sea","SEE"], "shade":["shade","SHAYD"], "smart":["smart","SMART"],
-  "sorry":["sor · ry","SOR-ee"], "sound":["sound","SOWND"], "step":["step","STEP"],
-  "stone":["stone","STOHN"], "stood":["stood","STUUD"], "strange":["strange","STRAYNJ"],
-  "street":["street","STREET"], "talk":["talk","TAWK"], "their":["their","THAIR"],
-  "told":["told","TOHLD"], "us":["us","US"], "wait":["wait","WAYT"],
-  "where":["where","WAIR"], "won":["won","WUN"], "woods":["woods","WUUDZ"],
-  "world":["world","WURLD"], "wrong":["wrong","RAWNG"], "yell":["yell","YEL"],
-  "yours":["yours","YORZ"]
-};
+const READING_FILE = 'series3-johnny-plants-the-world.html';
+const READING_KEY  = 'trent_reading_world_v1';   // must match KEY in that file
+const READING_NAME = 'Johnny Plants the World • 10 Days';
+const MATH_KEY     = 'trent_math_v1';            // must match KEY in math.html
 
-let userName="", completed=[], currentDay=null;
-let sigCanvas, sigCtx, drawing=false, hasSig=false;
-let checks=[false,false,false], quizDone=false;
-const KEY='trent_reading_world_v1';
-
-/* ---------- SPEECH (phone's built-in voice, Web Speech API) ---------- */
-let ttsVoice=null;
-function pickVoice(){
-  if(!('speechSynthesis' in window)) return;
-  const vs=speechSynthesis.getVoices();
-  ttsVoice = vs.find(v=>/en[-_]US/i.test(v.lang)) || vs.find(v=>/^en/i.test(v.lang)) || vs[0] || null;
-}
-if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged=pickVoice; pickVoice(); }
-function speak(text){
-  if(!('speechSynthesis' in window) || !text) return;
+function daysDone(key){
   try {
-    speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    u.rate=0.85; u.pitch=1; u.lang='en-US';
-    if(ttsVoice) u.voice=ttsVoice;
-    speechSynthesis.speak(u);
-  } catch(e){}
+    const d = JSON.parse(localStorage.getItem(key) || '{}');
+    return Array.isArray(d.completed) ? d.completed.length : 0;
+  } catch(e){ return 0; }
 }
-
-/* ---------- WORD POPUP ---------- */
-function fallbackSyl(w){
-  const m = w.toLowerCase().match(/[^aeiouy]*[aeiouy]+(?:[^aeiouy](?=[^aeiouy]))?|[^aeiouy]+$/gi);
-  return (m && m.length) ? m.join(' · ') : w;
+function savedName(){
+  for (const k of [READING_KEY, MATH_KEY]) {
+    try {
+      const d = JSON.parse(localStorage.getItem(k) || '{}');
+      if (d.name) return d.name;
+    } catch(e){}
+  }
+  return '';
 }
-function openWord(el){
-  const raw = el.getAttribute('data-w');
-  const p = PRON[raw.toLowerCase()];
-  document.getElementById('wpWord').textContent = raw;
-  document.getElementById('wpSyl').textContent = p ? p[0] : fallbackSyl(raw);
-  const sayEl=document.getElementById('wpSay');
-  if(p && p[1]){ sayEl.textContent='“'+p[1]+'”'; sayEl.style.display=''; }
-  else { sayEl.style.display='none'; }
-  document.getElementById('wpSpk').onclick=(e)=>{ e.stopPropagation(); speak(raw); };
-  document.getElementById('wpop').classList.add('show');
-  // no auto-play — Trent taps "🔊 Hear it" when he wants to hear it
+function paint(prefix, key){
+  const n = daysDone(key);
+  document.getElementById(prefix+'Prog').textContent = n + ' of 10 days done';
+  document.getElementById(prefix+'Fill').style.width = (n*10) + '%';
+  document.getElementById(prefix+'Done').innerHTML = n >= 10 ? '<span class="done-tag">★ ALL DONE</span>' : '';
 }
-function closeWord(){ document.getElementById('wpop').classList.remove('show'); }
-
-function saveProgress() {
-  try { localStorage.setItem(KEY, JSON.stringify({name:userName, completed})); showToast(); } catch(e){}
-}
-function loadProgress(name) {
-  try {
-    const d=JSON.parse(localStorage.getItem(KEY)||'{}');
-    if (d.name && d.name.toLowerCase()===name.toLowerCase()) return d.completed||[];
-  } catch(e){}
-  return [];
-}
-function showToast() {
-  const t=document.getElementById('toast');
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),1800);
-}
-function show(id) {
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0,0);
-}
-function startApp() {
-  const n=document.getElementById('nameInput').value.trim();
-  if(!n){document.getElementById('nameInput').focus();return;}
-  userName=n; completed=loadProgress(n); showMap();
-}
-function showMap() {
-  show('map');
-  document.getElementById('mapName').textContent=userName+"'s Adventure";
-  const done=completed.length;
-  document.getElementById('mapProg').textContent=done+" of 10 days done";
-  document.getElementById('progFill').style.width=(done*10)+"%";
-  const list=document.getElementById('dayList'); list.innerHTML='';
-  STORIES.forEach((s,i)=>{
-    const isDone=completed.includes(i);
-    const isCur=!isDone&&(i===0||completed.includes(i-1));
-    const isLocked=!isDone&&!isCur;
-    const c=document.createElement('div');
-    c.className='day-card'+(isDone?' done':'')+(isCur?' current':'')+(isLocked?' locked':'');
-    c.innerHTML=`<div class="day-num" style="background:${s.color}">${s.day}</div><div class="day-info"><h3>${s.title}</h3><p>Day ${s.day}</p></div><div class="day-emoji">${s.emoji}</div>`;
-    if(!isLocked) c.onclick=()=>openStory(i);
-    list.appendChild(c);
-  });
-}
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function renderLine(line,kws) {
-  const kset=new Set(kws.map(k=>k.toLowerCase()));
-  return line.split(/([A-Za-z]+)/).map(tok=>{
-    if(/^[A-Za-z]+$/.test(tok)){
-      const cls='word'+(kset.has(tok.toLowerCase())?' hl':'');
-      return `<span class="${cls}" data-w="${tok}" onclick="openWord(this)">${tok}</span>`;
-    }
-    return esc(tok);
-  }).join('');
-}
-function openStory(idx) {
-  currentDay=idx; checks=[false,false,false]; quizDone=false; hasSig=false;
-  const s=STORIES[idx];
-  document.getElementById('sDayTag').textContent='DAY '+s.day;
-  document.getElementById('sDayTag').style.color=s.color;
-  document.getElementById('sTitle').textContent=s.title;
-  document.getElementById('sEmoji').textContent=s.emoji;
-  const body=document.getElementById('storyBody'); body.innerHTML='';
-
-  // key words
-  const kb=document.createElement('div'); kb.className='kw-box';
-  kb.style.cssText=`border-color:${s.color};background:${s.bg}`;
-  kb.innerHTML=`<div class="kw-lbl">Look for these words 👀</div><div class="kw-list">${s.keyWords.map(w=>`<span class="kw-chip" style="background:${s.color}">${w}</span>`).join('')}</div>`;
-  body.appendChild(kb);
-
-  // tap tip
-  const tip=document.createElement('div'); tip.className='tap-tip';
-  tip.textContent='👆 Tap any hard word to see it and sound it out.';
-  body.appendChild(tip);
-
-  // lines (tappable words only — no whole-line audio; Trent reads it himself)
-  s.lines.forEach(line=>{
-    const row=document.createElement('div'); row.className='s-line';
-    row.innerHTML=renderLine(line,s.keyWords);
-    body.appendChild(row);
-  });
-
-  // quiz
-  const qd=document.createElement('div'); qd.className='sec';
-  qd.innerHTML=`<div class="sec-title" style="color:${s.color}">Quick Check ✏️</div><div class="sec-sub">Tap the right answer</div><div class="quiz-q">${s.quiz.q}</div><div class="quiz-opts" id="qOpts">${s.quiz.opts.map((o,i)=>`<button class="qopt" onclick="answerQuiz(${i},${s.quiz.ans})">${o}</button>`).join('')}</div><div class="quiz-fb" id="qFb"></div>`;
-  body.appendChild(qd);
-
-  // signoff
-  const sd=document.createElement('div'); sd.className='sec';
-  sd.innerHTML=`<div class="sec-title" style="color:${s.color}">Sign Off ✍️</div><div style="height:6px"></div>${['I read every word','I found the key words','I am proud of myself'].map((l,i)=>`<div class="chk-item" id="chk${i}" onclick="toggleChk(${i})"><div class="chk-box" id="box${i}"></div><span>${l}</span></div>`).join('')}<div class="sig-wrap"><div class="sig-lbl">Sign your name</div><div class="sig-cw"><canvas id="sigCanvas" height="130"></canvas><div class="sig-hint" id="sigHint">✍️ Draw your name here</div></div><button class="sig-clear" onclick="clearSig()">Clear ✕</button></div><button class="finish-btn" id="finBtn" style="background:${s.color}" onclick="finishDay()" disabled>Done for Today! 🎉</button>`;
-  body.appendChild(sd);
-
-  show('story'); setupCanvas();
-}
-function answerQuiz(chosen,correct) {
-  if(quizDone) return; quizDone=true;
-  document.querySelectorAll('.qopt').forEach((o,i)=>{ o.classList.add('disabled'); if(i===correct) o.classList.add('correct'); else if(i===chosen) o.classList.add('wrong'); });
-  const fb=document.getElementById('qFb');
-  if(chosen===correct){fb.textContent='✅ Yes! That is right!';fb.className='quiz-fb good';}
-  else{fb.textContent='❌ Not quite — the green one is right.';fb.className='quiz-fb bad';}
-  checkReady();
-}
-function toggleChk(i) {
-  checks[i]=!checks[i];
-  document.getElementById('chk'+i).classList.toggle('checked',checks[i]);
-  document.getElementById('box'+i).textContent=checks[i]?'✓':'';
-  checkReady();
-}
-function checkReady() { document.getElementById('finBtn').disabled=!(checks.every(Boolean)&&hasSig&&quizDone); }
-function setupCanvas() {
-  sigCanvas=document.getElementById('sigCanvas');
-  sigCanvas.width=sigCanvas.parentElement.clientWidth||340;
-  sigCtx=sigCanvas.getContext('2d');
-  sigCtx.strokeStyle='#1A1A1A'; sigCtx.lineWidth=4; sigCtx.lineCap='round'; sigCtx.lineJoin='round';
-  function pos(e){const r=sigCanvas.getBoundingClientRect(),src=e.touches?e.touches[0]:e;return{x:src.clientX-r.left,y:src.clientY-r.top};}
-  sigCanvas.addEventListener('mousedown',e=>{drawing=true;const p=pos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);});
-  sigCanvas.addEventListener('mousemove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();hasSig=true;document.getElementById('sigHint').style.opacity='0';checkReady();});
-  sigCanvas.addEventListener('mouseup',()=>drawing=false);
-  sigCanvas.addEventListener('touchstart',e=>{drawing=true;const p=pos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);},{passive:false});
-  sigCanvas.addEventListener('touchmove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();hasSig=true;document.getElementById('sigHint').style.opacity='0';checkReady();},{passive:false});
-  sigCanvas.addEventListener('touchend',()=>drawing=false);
-}
-function clearSig(){sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);hasSig=false;document.getElementById('sigHint').style.opacity='1';checkReady();}
-function finishDay() {
-  if(!completed.includes(currentDay)) completed.push(currentDay);
-  saveProgress();
-  const s=STORIES[currentDay];
-  document.getElementById('celName').textContent=userName+'!';
-  const msgs=["You finished Day "+s.day+".\nYou are doing great!","Day "+s.day+" is done.\nYou are getting stronger every day!","Another story done, "+userName+".\nKeep it up — you are on a roll!"];
-  document.getElementById('celMsg').textContent=msgs[currentDay%msgs.length];
-  show('celebrate');
-}
-window.onload=()=>{
-  try{const d=JSON.parse(localStorage.getItem(KEY)||'{}');if(d.name)document.getElementById('nameInput').value=d.name;}catch(e){}
-  // close the word popup when tapping anywhere on the overlay (incl. the card)
-  const wp=document.getElementById('wpop');
-  if(wp) wp.addEventListener('click', closeWord);
+window.onload = () => {
+  document.getElementById('readCard').href = READING_FILE;
+  document.getElementById('readSub').textContent = READING_NAME;
+  const name = savedName();
+  if (name) document.getElementById('title').textContent = name + "'s Adventure";
+  paint('read', READING_KEY);
+  paint('math', MATH_KEY);
 };
 </script>
 </body>
