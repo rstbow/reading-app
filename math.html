@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Trent's Math Adventure</title>
+<style>
+  :root {
+    --blue:#1565C0; --blue-dark:#0D47A1; --blue-light:#E3F2FD;
+    --green:#388E3C; --gold:#F9A825; --red:#C62828; --muted:#6B7280; --bg:#EEF4FB;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); color:#1A1A1A; min-height:100vh; overflow-x:hidden; }
+  .screen { display:none; min-height:100vh; }
+  .screen.active { display:flex; flex-direction:column; }
+
+  /* HOME */
+  #home { background:linear-gradient(160deg,#0D47A1 0%,#1565C0 55%,#1E88E5 100%); align-items:center; justify-content:center; padding:40px 24px; text-align:center; position:relative; overflow:hidden; }
+  .home-icon { font-size:90px; margin-bottom:12px; animation:float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  .home-title { font-size:38px; font-weight:900; color:white; line-height:1.15; margin-bottom:6px; text-shadow:0 4px 12px rgba(0,0,0,0.3); }
+  .home-sub { font-size:17px; color:rgba(255,255,255,0.85); margin-bottom:32px; font-weight:700; }
+  .home-card { background:rgba(255,255,255,0.13); border-radius:20px; padding:22px; width:100%; max-width:360px; border:2px solid rgba(255,255,255,0.22); margin-bottom:22px; }
+  .name-label { color:rgba(255,255,255,0.9); font-size:15px; font-weight:800; margin-bottom:10px; display:block; text-align:left; }
+  .name-input { width:100%; padding:14px 18px; border-radius:14px; border:2px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.18); color:white; font-family:inherit; font-size:20px; font-weight:800; outline:none; text-align:center; }
+  .name-input::placeholder { color:rgba(255,255,255,0.45); }
+  .name-input:focus { border-color:var(--gold); }
+  .start-btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:16px; padding:18px 44px; font-family:inherit; font-size:24px; font-weight:900; cursor:pointer; box-shadow:0 6px 24px rgba(249,168,37,0.45); transition:transform 0.15s; }
+  .start-btn:active { transform:scale(0.96); }
+  .menu-link { display:inline-block; margin-top:24px; color:rgba(255,255,255,0.85); font-size:15px; font-weight:800; text-decoration:none; padding:10px 18px; border-radius:12px; border:2px solid rgba(255,255,255,0.3); }
+
+  /* MAP */
+  #map { background:var(--bg); }
+  .map-header { background:linear-gradient(135deg,#0D47A1,#1565C0); padding:20px 20px 16px; color:white; box-shadow:0 4px 16px rgba(13,71,161,0.3); }
+  .map-header-top { display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+  .map-avatar { font-size:36px; }
+  .map-hd { flex:1; }
+  .map-hd h2 { font-size:20px; font-weight:900; }
+  .map-hd p { font-size:13px; opacity:0.85; font-weight:600; }
+  .home-btn { background:rgba(255,255,255,0.18); border:2px solid rgba(255,255,255,0.3); color:white; border-radius:12px; width:44px; height:44px; font-size:20px; cursor:pointer; text-decoration:none; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .prog-wrap { background:rgba(255,255,255,0.25); border-radius:20px; height:10px; overflow:hidden; }
+  .prog-fill { height:100%; background:var(--gold); border-radius:20px; transition:width 0.6s ease; }
+  .map-scroll { flex:1; overflow-y:auto; padding:20px 18px 40px; }
+  .map-title { font-size:20px; font-weight:900; color:var(--blue-dark); margin-bottom:16px; text-align:center; }
+  .day-card { display:flex; align-items:center; gap:14px; background:white; border-radius:16px; padding:14px 16px; margin-bottom:12px; box-shadow:0 3px 12px rgba(0,0,0,0.07); cursor:pointer; border:3px solid transparent; transition:transform 0.15s,border-color 0.2s; position:relative; }
+  .day-card:active { transform:scale(0.98); }
+  .day-card.locked { opacity:0.4; cursor:not-allowed; }
+  .day-card.done { border-color:var(--green); }
+  .day-card.done::after { content:'✓'; position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:24px; color:var(--green); font-weight:900; }
+  .day-card.current { border-color:var(--gold); box-shadow:0 4px 18px rgba(249,168,37,0.28); }
+  .day-num { width:50px; height:50px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:white; flex-shrink:0; }
+  .day-info h3 { font-size:17px; font-weight:800; margin-bottom:2px; }
+  .day-info p { font-size:12px; color:var(--muted); font-weight:600; }
+  .day-emoji { font-size:26px; margin-left:auto; margin-right:32px; }
+
+  /* DAY */
+  #day { background:white; }
+  .day-hdr { padding:16px 18px; display:flex; align-items:center; gap:12px; border-bottom:2px solid #F0F4F8; position:sticky; top:0; background:white; z-index:10; }
+  .back-btn { width:42px; height:42px; border-radius:12px; border:none; background:#F0F4F8; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .back-btn:active { background:#E2E8F0; }
+  .dhdr-info { flex:1; }
+  .d-day-tag { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
+  .d-title { font-size:19px; font-weight:900; line-height:1.2; }
+  .d-emoji { font-size:34px; }
+  .day-body { padding:22px 22px 48px; flex:1; }
+
+  .intro-box { border-radius:14px; padding:14px 16px; margin-bottom:14px; border-left:5px solid var(--blue); }
+  .intro-lbl { font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .i-line { font-size:20px; font-weight:600; line-height:1.9; }
+
+  .tap-tip { background:var(--blue-light); border-radius:12px; padding:10px 14px; margin-bottom:20px; font-size:14px; font-weight:700; color:var(--blue-dark); text-align:center; }
+
+  .word { cursor:pointer; border-radius:4px; padding:0 1px; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .word:active { background:rgba(21,101,192,0.20); }
+  .num { cursor:pointer; border-radius:4px; padding:0 2px; font-weight:900; color:var(--blue-dark); -webkit-user-select:none; user-select:none; }
+  .num:active { background:rgba(21,101,192,0.20); }
+
+  /* PROBLEM */
+  .p-count { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .p-count-txt { font-size:14px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .p-dots { display:flex; gap:6px; }
+  .p-dot { width:12px; height:12px; border-radius:50%; background:#E2E8F0; }
+  .p-dot.done { background:var(--green); }
+  .p-dot.now { background:var(--gold); }
+
+  .prob-card { border:3px solid #E2E8F0; border-radius:20px; padding:22px 18px; text-align:center; }
+  .wp-lines { text-align:left; margin-bottom:18px; }
+  .wp-line { font-size:21px; font-weight:600; line-height:1.9; }
+
+  .stack { display:inline-block; text-align:right; font-variant-numeric:tabular-nums; margin-bottom:6px; }
+  .st-row { font-size:46px; font-weight:900; line-height:1.18; letter-spacing:2px; }
+  .st-op { margin-right:22px; }
+  .st-rule { height:5px; background:#1A1A1A; border-radius:3px; margin:6px 0 10px; }
+  .ans-box { min-width:130px; height:70px; margin:0 auto 4px; border:4px dashed #CBD5E1; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:42px; font-weight:900; color:var(--blue-dark); font-variant-numeric:tabular-nums; background:#F8FAFC; }
+  .ans-box.filled { border-style:solid; border-color:var(--blue); }
+  .ans-box.good { border-color:var(--green); background:#E8F5E9; color:var(--green); }
+  .ans-box.bad { border-color:var(--red); background:#FFEBEE; color:var(--red); animation:shake 0.4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-9px)} 75%{transform:translateX(9px)} }
+
+  .p-fb { font-size:18px; font-weight:800; min-height:26px; margin:10px 0 4px; }
+  .p-fb.good { color:var(--green); }
+  .p-fb.bad { color:var(--red); }
+
+  .help-btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:14px; padding:13px 22px; font-family:inherit; font-size:19px; font-weight:900; cursor:pointer; box-shadow:0 4px 14px rgba(249,168,37,0.4); margin-top:6px; }
+  .help-btn:active { transform:scale(0.96); }
+
+  .pad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:18px; }
+  .key { padding:18px 0; border-radius:14px; border:3px solid #E2E8F0; background:white; font-family:inherit; font-size:26px; font-weight:900; cursor:pointer; color:#1A1A1A; }
+  .key:active { transform:scale(0.95); background:#F0F4F8; }
+  .key.wide { grid-column:span 1; }
+  .key-check { background:var(--blue); border-color:var(--blue); color:white; font-size:20px; }
+  .key-del { background:#F0F4F8; font-size:22px; }
+  .next-btn { width:100%; margin-top:16px; padding:18px; border:none; border-radius:16px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; color:white; background:var(--green); box-shadow:0 6px 18px rgba(56,142,60,0.3); }
+  .next-btn:active { transform:scale(0.97); }
+
+  /* HELP POPUP (the ? — how to do it, at Trent's reading level) */
+  .hpop { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:flex-end; justify-content:center; z-index:500; }
+  .hpop.show { display:flex; }
+  .hpop-card { background:white; border-radius:26px 26px 0 0; padding:24px 22px 28px; width:100%; max-width:520px; max-height:88vh; overflow-y:auto; box-shadow:0 -10px 44px rgba(0,0,0,0.35); }
+  .hpop-title { font-size:26px; font-weight:900; color:var(--blue-dark); margin-bottom:4px; }
+  .hpop-sub { font-size:14px; font-weight:700; color:var(--muted); margin-bottom:16px; }
+  .h-line { font-size:22px; font-weight:600; line-height:1.95; padding:3px 4px; border-radius:6px; }
+  .h-line.big { font-size:26px; font-weight:900; color:var(--blue-dark); background:var(--blue-light); display:block; margin-top:8px; padding:10px 12px; }
+  .hpop-close { width:100%; margin-top:20px; padding:16px; border:none; border-radius:16px; background:var(--blue); color:white; font-family:inherit; font-size:20px; font-weight:900; cursor:pointer; }
+
+  /* WORD POPUP (same reading help as the reading app) */
+  .wpop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:600; padding:24px; }
+  .wpop.show { display:flex; }
+  .wpop-card { background:white; border-radius:24px; padding:32px 28px 22px; text-align:center; max-width:340px; width:100%; box-shadow:0 14px 44px rgba(0,0,0,0.35); }
+  .wpop-word { font-size:42px; font-weight:900; color:#1A1A1A; margin-bottom:14px; word-break:break-word; }
+  .wpop-syl { font-size:30px; font-weight:800; color:var(--blue); letter-spacing:1px; margin-bottom:6px; }
+  .wpop-say { font-size:24px; font-weight:800; color:#E65100; margin-bottom:22px; }
+  .wpop-spk { background:var(--blue); color:white; border:none; border-radius:16px; padding:16px 32px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; box-shadow:0 5px 16px rgba(21,101,192,0.4); }
+  .wpop-spk:active { transform:scale(0.96); }
+  .wpop-close { margin-top:16px; font-size:13px; color:#9CA3AF; font-weight:700; }
+
+  .sec { margin-top:26px; padding-top:22px; border-top:2px solid #F0F4F8; }
+  .sec-title { font-size:21px; font-weight:900; margin-bottom:4px; }
+  .chk-item { display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:13px; border:3px solid #E2E8F0; margin-bottom:10px; cursor:pointer; transition:all 0.2s; font-size:17px; font-weight:700; background:white; }
+  .chk-item.checked { border-color:var(--green); background:#E8F5E9; }
+  .chk-box { width:30px; height:30px; border-radius:8px; border:3px solid #CBD5E1; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; transition:all 0.2s; background:white; }
+  .chk-item.checked .chk-box { background:var(--green); border-color:var(--green); color:white; }
+
+  .sig-wrap { margin-top:18px; }
+  .sig-lbl { font-size:13px; font-weight:800; margin-bottom:8px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .sig-cw { border:3px solid #E2E8F0; border-radius:14px; overflow:hidden; background:#FAFAFA; position:relative; }
+  canvas { display:block; touch-action:none; }
+  .sig-hint { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#CBD5E1; font-size:16px; font-weight:700; pointer-events:none; transition:opacity 0.3s; text-align:center; }
+  .sig-clear { margin-top:8px; background:none; border:2px solid #E2E8F0; border-radius:10px; padding:7px 14px; font-family:inherit; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer; }
+
+  .finish-btn { width:100%; margin-top:20px; padding:18px; border:none; border-radius:16px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; transition:transform 0.15s,opacity 0.2s; color:white; box-shadow:0 6px 18px rgba(0,0,0,0.15); }
+  .finish-btn:disabled { opacity:0.35; cursor:not-allowed; }
+  .finish-btn:not(:disabled):active { transform:scale(0.97); }
+
+  /* CELEBRATE */
+  #celebrate { background:linear-gradient(160deg,#0D47A1 0%,#1565C0 55%,#1E88E5 100%); align-items:center; justify-content:center; text-align:center; padding:40px 24px; }
+  .cel-icon { font-size:96px; animation:bounce 0.6s ease infinite alternate; }
+  @keyframes bounce { from{transform:scale(1)} to{transform:scale(1.15)} }
+  .cel-stars { font-size:34px; margin:10px 0; }
+  .cel-title { font-size:44px; font-weight:900; color:var(--gold); margin-bottom:8px; text-shadow:0 4px 12px rgba(0,0,0,0.3); }
+  .cel-name { font-size:26px; color:white; font-weight:900; margin-bottom:10px; }
+  .cel-msg { font-size:19px; color:rgba(255,255,255,0.9); font-weight:600; margin-bottom:32px; line-height:1.6; white-space:pre-line; }
+  .cel-btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:16px; padding:16px 36px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; box-shadow:0 6px 24px rgba(249,168,37,0.4); transition:transform 0.15s; }
+  .cel-btn:active { transform:scale(0.96); }
+
+  .toast { position:fixed; top:16px; right:16px; background:var(--blue-dark); color:white; padding:10px 18px; border-radius:12px; font-size:14px; font-weight:800; z-index:999; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+  .toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ Progress Saved!</div>
+
+<!-- WORD POPUP (tap any word OR any number → syllables + sound-it-out + hear it) -->
+<div class="wpop" id="wpop">
+  <div class="wpop-card">
+    <div class="wpop-word" id="wpWord"></div>
+    <div class="wpop-syl" id="wpSyl"></div>
+    <div class="wpop-say" id="wpSay"></div>
+    <button class="wpop-spk" id="wpSpk">🔊 Hear it</button>
+    <div class="wpop-close">tap anywhere to close</div>
+  </div>
+</div>
+
+<!-- HELP POPUP (the ? button) -->
+<div class="hpop" id="hpop">
+  <div class="hpop-card" id="hpopCard">
+    <div class="hpop-title" id="hTitle">How to do it</div>
+    <div class="hpop-sub">👆 Tap any word or number you do not know.</div>
+    <div id="hLines"></div>
+    <button class="hpop-close" onclick="closeHelp()">Got it 👍</button>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="home-icon">➕</div>
+  <h1 class="home-title">Trent's Math<br>Adventure</h1>
+  <p class="home-sub">Add &amp; Take Away • 10 Days</p>
+  <div class="home-card">
+    <label class="name-label">What is your name?</label>
+    <input class="name-input" id="nameInput" type="text" placeholder="Type your name..." maxlength="30" autocomplete="off">
+  </div>
+  <button class="start-btn" onclick="startApp()">Let's Go! ➕</button>
+  <a class="menu-link" href="index.html">🏠 Back to Menu</a>
+</div>
+
+<!-- MAP -->
+<div id="map" class="screen">
+  <div class="map-header">
+    <div class="map-header-top">
+      <div class="map-avatar">➕</div>
+      <div class="map-hd">
+        <h2 id="mapName">Math Adventure</h2>
+        <p id="mapProg">0 of 10 days done</p>
+      </div>
+      <a class="home-btn" href="index.html" title="Menu">🏠</a>
+    </div>
+    <div class="prog-wrap"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+  <div class="map-scroll">
+    <div class="map-title">Choose Today's Math ➕</div>
+    <div id="dayList"></div>
+  </div>
+</div>
+
+<!-- DAY -->
+<div id="day" class="screen">
+  <div class="day-hdr">
+    <button class="back-btn" onclick="showMap()">←</button>
+    <div class="dhdr-info">
+      <div class="d-day-tag" id="dDayTag"></div>
+      <div class="d-title" id="dTitle"></div>
+    </div>
+    <div class="d-emoji" id="dEmoji"></div>
+  </div>
+  <div class="day-body" id="dayBody"></div>
+</div>
+
+<!-- CELEBRATE -->
+<div id="celebrate" class="screen">
+  <div class="cel-icon">🏆</div>
+  <div class="cel-stars">⭐ ⭐ ⭐</div>
+  <div class="cel-title">You Did It!</div>
+  <div class="cel-name" id="celName"></div>
+  <div class="cel-msg" id="celMsg"></div>
+  <button class="cel-btn" onclick="showMap()">Back to My Days 🗺️</button>
+</div>
+
+<script>
+/* ---------------------------------------------------------------------------
+   TRENT'S MATH ADVENTURE — 10 days, 5 problems a day.
+   Same engine + same reading help as the reading app: every word and every
+   number is tappable (syllables + sound-it-out + 🔊 hear it), and every
+   problem has a "?" that TEACHES the method in Trent-level sentences.
+   Sign-off is still earned: all 5 right + 3 checkboxes + signature.
+
+   To add a new 10-day math set: swap the DAYS array below. Each day has an
+   intro, a help() that explains the method with THIS problem's numbers, and
+   5 problems. Keep sentences 4-7 words, 1-2 syllable words.
+--------------------------------------------------------------------------- */
+
+/* helper bits used by the help() writers */
+const up   = (from,n) => { const a=[]; for(let i=1;i<=n;i++) a.push(from+i); return a.join(", ")+"."; };
+const down = (from,n) => { const a=[]; for(let i=1;i<=n;i++) a.push(from-i); return a.join(", ")+"."; };
+const tens = n => Math.floor(n/10)*10;
+const ones = n => n%10;
+
+const DAYS = [
+  { day:1, title:"Add It Up", emoji:"➕", color:"#1565C0", bg:"#E3F2FD",
+    intro:["Today we add.","Add means put them in one group.","Add makes the number bigger.","Tap the ? if you get stuck."],
+    problems:[{a:5,b:12},{a:4,b:11},{a:6,b:13},{a:3,b:15},{a:2,b:14}],
+    help:p=>{ const big=Math.max(p.a,p.b), sm=Math.min(p.a,p.b); return {
+      title:"How to add",
+      lines:["Add means put them in one group.","Start at the big number: "+big+".","Now count up "+sm+" more.",up(big,sm),"BIG:"+p.a+" + "+p.b+" = "+(p.a+p.b),"You can count on your fingers."] }; }
+  },
+  { day:2, title:"Add the Ones", emoji:"🔢", color:"#0277BD", bg:"#E1F5FE",
+    intro:["Now the numbers get bigger.","Look at the ones first.","The tens can stay the same.","You can do this."],
+    problems:[{a:14,b:5},{a:21,b:7},{a:32,b:6},{a:45,b:4},{a:23,b:5}],
+    help:p=>({
+      title:"How to add the ones",
+      lines:["Look at the ones.",p.a+" has "+ones(p.a)+" ones.",ones(p.a)+" plus "+p.b+" is "+(ones(p.a)+p.b)+".","The tens stay the same.","BIG:"+p.a+" + "+p.b+" = "+(p.a+p.b),"Just add the ones. That is all."] })
+  },
+  { day:3, title:"Take It Away", emoji:"➖", color:"#C62828", bg:"#FFEBEE",
+    intro:["Today we take away.","Take away means count back.","It makes the number smaller.","Go slow. Use your fingers."],
+    problems:[{a:10,b:3,op:"-"},{a:9,b:4,op:"-"},{a:8,b:5,op:"-"},{a:10,b:6,op:"-"},{a:7,b:2,op:"-"}],
+    help:p=>({
+      title:"How to take away",
+      lines:["Take away means count back.","Start at "+p.a+".","Count back "+p.b+".",down(p.a,p.b),"BIG:"+p.a+" - "+p.b+" = "+(p.a-p.b),"Take away makes it smaller."] })
+  },
+  { day:4, title:"Count Back", emoji:"👣", color:"#AD1457", bg:"#FCE4EC",
+    intro:["More take away.","Start at the big number.","Count back one at a time.","The ten stays the same."],
+    problems:[{a:15,b:4,op:"-"},{a:17,b:3,op:"-"},{a:19,b:6,op:"-"},{a:16,b:5,op:"-"},{a:18,b:2,op:"-"}],
+    help:p=>({
+      title:"How to count back",
+      lines:["Start at the big number: "+p.a+".","Count back "+p.b+".",down(p.a,p.b),"BIG:"+p.a+" - "+p.b+" = "+(p.a-p.b),"The ten did not change."] })
+  },
+  { day:5, title:"Add or Take Away?", emoji:"🔀", color:"#6A1B9A", bg:"#F3E5F5",
+    intro:["Today you pick.","Some add. Some take away.","Look at the sign first.","Then go slow and do it."],
+    problems:[{a:13,b:6},{a:16,b:4,op:"-"},{a:7,b:11},{a:18,b:5,op:"-"},{a:12,b:7}],
+    help:p=>{ const add=p.op!=="-"; const big=Math.max(p.a,p.b), sm=Math.min(p.a,p.b); return {
+      title:"Which one is it?",
+      lines:["Look at the sign first.","+ means add. Count up.","- means take away. Count back.",
+        add ? "This one is add." : "This one is take away.",
+        add ? "Start at "+big+". Count up "+sm+"." : "Start at "+p.a+". Count back "+p.b+".",
+        add ? up(big,sm) : down(p.a,p.b),
+        "BIG:"+p.a+" "+(add?"+":"-")+" "+p.b+" = "+(add?p.a+p.b:p.a-p.b)] }; }
+  },
+  { day:6, title:"Make a Ten", emoji:"🔟", color:"#EF6C00", bg:"#FFF3E0",
+    intro:["These go past ten.","Make a ten first.","Then add what is left.","It is a smart trick."],
+    problems:[{a:9,b:6},{a:7,b:8},{a:8,b:5},{a:6,b:7},{a:9,b:9}],
+    help:p=>{ const m=Math.max(p.a,p.b), o=Math.min(p.a,p.b), need=10-m, rest=o-need; return {
+      title:"How to make a ten",
+      lines:["This one goes past ten.","Make a ten first.",m+" needs "+need+" more to make 10.","Take "+need+" from the "+o+".","Now you have 10 and "+rest+".","10 + "+rest+" = "+(10+rest)+".","BIG:"+p.a+" + "+p.b+" = "+(p.a+p.b)] }; }
+  },
+  { day:7, title:"Tens and Ones", emoji:"🏗️", color:"#2E7D32", bg:"#E8F5E9",
+    intro:["Big plus big.","Do the tens first.","Then do the ones.","Then put them back."],
+    problems:[{a:23,b:14},{a:31,b:25},{a:42,b:16},{a:54,b:23},{a:35,b:22}],
+    help:p=>{ const t=tens(p.a)+tens(p.b), o=ones(p.a)+ones(p.b); return {
+      title:"Tens first, then ones",
+      lines:["Big numbers have tens and ones.","Do the tens first.",tens(p.a)+" + "+tens(p.b)+" = "+t+".","Now do the ones.",ones(p.a)+" + "+ones(p.b)+" = "+o+".","Put them back as one.",t+" + "+o+" = "+(t+o)+".","BIG:"+p.a+" + "+p.b+" = "+(p.a+p.b)] }; }
+  },
+  { day:8, title:"Big Take Away", emoji:"🧱", color:"#00695C", bg:"#E0F2F1",
+    intro:["Big take away.","Same as the tens trick.","Tens first. Then ones.","You have done this."],
+    problems:[{a:37,b:14,op:"-"},{a:48,b:23,op:"-"},{a:56,b:21,op:"-"},{a:29,b:15,op:"-"},{a:68,b:34,op:"-"}],
+    help:p=>{ const t=tens(p.a)-tens(p.b), o=ones(p.a)-ones(p.b); return {
+      title:"Tens first, then ones",
+      lines:["Take away the tens first.",tens(p.a)+" - "+tens(p.b)+" = "+t+".","Now the ones.",ones(p.a)+" - "+ones(p.b)+" = "+o+".","Put them back as one.",t+" + "+o+" = "+(t+o)+".","BIG:"+p.a+" - "+p.b+" = "+(p.a-p.b)] }; }
+  },
+  { day:9, title:"Math in Real Life", emoji:"🛒", color:"#5D4037", bg:"#EFEBE9",
+    intro:["Math is in real life.","Read each one slow.","Find the two numbers.","More? Add. Left? Take away."],
+    problems:[
+      {a:12,b:5,text:["Trent had 12 cards.","He got 5 more.","How many cards now?"]},
+      {a:10,b:3,op:"-",text:["There were 10 dogs.","3 dogs ran off.","How many dogs are left?"]},
+      {a:18,b:6,op:"-",text:["A book has 18 pages.","Trent read 6 pages.","How many pages are left?"]},
+      {a:7,b:8,text:["Trent has 7 rocks.","He finds 8 more.","How many rocks now?"]},
+      {a:24,b:12,op:"-",text:["Trent has 24 bricks.","He gives 12 away.","How many bricks are left?"]}
+    ],
+    help:p=>{ const add=p.op!=="-"; return {
+      title:"How to read a math story",
+      lines:["Read it slow. One line at a time.","Look for the two numbers.","Got more? Then add.","Gone or left? Then take away.","This one has "+p.a+" and "+p.b+".",
+        add ? "He got more. So add." : "Some are gone. So take away.",
+        "BIG:"+p.a+" "+(add?"+":"-")+" "+p.b+" = "+(add?p.a+p.b:p.a-p.b)] }; }
+  },
+  { day:10, title:"Trent's Math Day", emoji:"⭐", color:"#F9A825", bg:"#FFFDE7",
+    intro:["This day is yours, Trent.","You did nine days of math.","You did not quit.","You know how to add.","You know how to take away.","Show what you know, Trent."],
+    problems:[{a:5,b:13},{a:16,b:5,op:"-"},{a:9,b:7},{a:34,b:23},{a:46,b:24,op:"-"}],
+    help:p=>{ const add=p.op!=="-"; const big=Math.max(p.a,p.b), sm=Math.min(p.a,p.b); return {
+      title:"You know this, Trent",
+      lines:["You know all of this now.","Add? Count up or make a ten.","Take away? Count back.","Big ones? Tens first, then ones.",
+        add ? "Start at "+big+". Count up "+sm+"." : "Start at "+p.a+". Count back "+p.b+".",
+        "BIG:"+p.a+" "+(add?"+":"-")+" "+p.b+" = "+(add?p.a+p.b:p.a-p.b),
+        "Go slow. You have this."] }; }
+  }
+];
+
+/* ---------------------------------------------------------------------------
+   PRONUNCIATION DICTIONARY — same idea as the reading app.
+   "word": [ "syl · la · bles", "SOUND-it-out" ]   (CAPS = say it loudest)
+   Every word used on any screen is hand-listed so nothing is guessed.
+   Unlisted words still work (auto syllable split + still read aloud).
+--------------------------------------------------------------------------- */
+const PRON = {
+  "a":["a","uh"], "add":["add","AD"], "all":["all","AWL"], "am":["am","AM"],
+  "an":["an","AN"], "and":["and","AND"], "any":["an · y","EN-ee"], "are":["are","AR"],
+  "as":["as","AZ"], "at":["at","AT"], "away":["a · way","uh-WAY"], "back":["back","BAK"],
+  "be":["be","BEE"], "big":["big","BIG"], "bigger":["big · ger","BIG-ur"],
+  "book":["book","BUUK"], "both":["both","BOHTH"], "bricks":["bricks","BRIKS"],
+  "can":["can","KAN"], "cards":["cards","KARDZ"], "change":["change","CHAYNJ"],
+  "check":["check","CHEK"], "count":["count","KOWNT"], "day":["day","DAY"],
+  "days":["days","DAYZ"], "did":["did","DID"], "do":["do","DOO"], "does":["does","DUZ"],
+  "dogs":["dogs","DAWGZ"], "done":["done","DUN"], "each":["each","EECH"],
+  "fingers":["fin · gers","FING-gurz"], "find":["find","FYND"], "finds":["finds","FYNDZ"],
+  "first":["first","FURST"], "for":["for","FOR"], "from":["from","FRUM"],
+  "get":["get","GET"], "gives":["gives","GIVZ"], "go":["go","GOH"], "goes":["goes","GOHZ"],
+  "gone":["gone","GAWN"], "good":["good","GUUD"], "got":["got","GOT"],
+  "group":["group","GROOP"], "had":["had","HAD"], "has":["has","HAZ"],
+  "have":["have","HAV"], "he":["he","HEE"], "how":["how","HOW"], "i":["I","EYE"],
+  "if":["if","IF"], "in":["in","IN"], "is":["is","IZ"], "it":["it","IT"],
+  "just":["just","JUST"], "know":["know","NOH"], "left":["left","LEFT"],
+  "less":["less","LES"], "life":["life","LYF"], "line":["line","LYN"],
+  "look":["look","LUUK"], "make":["make","MAYK"], "makes":["makes","MAYKS"],
+  "many":["man · y","MEN-ee"], "math":["math","MATH"], "means":["means","MEENZ"],
+  "minus":["mi · nus","MY-nus"], "more":["more","MOR"], "needs":["needs","NEEDZ"],
+  "nine":["nine","NYN"], "no":["no","NOH"], "not":["not","NOT"], "now":["now","NOW"],
+  "number":["num · ber","NUM-bur"], "numbers":["num · bers","NUM-burz"],
+  "of":["of","UV"], "off":["off","AWF"], "on":["on","ON"], "one":["one","WUN"],
+  "ones":["ones","WUNZ"], "or":["or","OR"], "pack":["pack","PAK"], "pages":["pa · ges","PAY-jiz"],
+  "past":["past","PAST"], "pick":["pick","PIK"], "plus":["plus","PLUS"],
+  "proud":["proud","PROWD"], "put":["put","PUUT"], "quit":["quit","KWIT"],
+  "ran":["ran","RAN"], "read":["read","REED"], "real":["re · al","REE-uhl"],
+  "right":["right","RYT"], "rocks":["rocks","ROKS"], "same":["same","SAYM"],
+  "show":["show","SHOH"], "sign":["sign","SYN"], "slow":["slow","SLOH"],
+  "smaller":["smal · ler","SMAW-lur"], "smart":["smart","SMART"], "so":["so","SOH"],
+  "some":["some","SUM"], "start":["start","START"], "stay":["stay","STAY"],
+  "stays":["stays","STAYZ"], "stuck":["stuck","STUK"], "take":["take","TAYK"],
+  "tap":["tap","TAP"], "ten":["ten","TEN"], "tens":["tens","TENZ"],
+  "that":["that","THAT"], "the":["the","THUH"], "them":["them","THEM"],
+  "then":["then","THEN"], "there":["there","THAIR"], "these":["these","THEEZ"],
+  "this":["this","THIS"], "yours":["yours","YORZ"],
+  "time":["time","TYM"], "to":["to","TOO"], "today":["to · day","tuh-DAY"],
+  "trent":["Trent","TRENT"], "trick":["trick","TRIK"], "two":["two","TOO"],
+  "up":["up","UP"], "use":["use","YOOZ"], "was":["was","WUZ"], "we":["we","WEE"],
+  "were":["were","WUR"], "what":["what","WUT"], "which":["which","WICH"],
+  "with":["with","WITH"], "work":["work","WURK"], "you":["you","YOO"], "your":["your","YOR"]
+};
+
+/* ---- numbers are tappable too (dyslexia: numerals get flipped/misread) ---- */
+const NUMW = {
+  0:["zero","ze · ro","ZEER-oh"], 1:["one","one","WUN"], 2:["two","two","TOO"],
+  3:["three","three","THREE"], 4:["four","four","FOR"], 5:["five","five","FYV"],
+  6:["six","six","SIKS"], 7:["seven","sev · en","SEV-un"], 8:["eight","eight","AYT"],
+  9:["nine","nine","NYN"], 10:["ten","ten","TEN"], 11:["eleven","e · lev · en","ee-LEV-un"],
+  12:["twelve","twelve","TWELV"], 13:["thirteen","thir · teen","thur-TEEN"],
+  14:["fourteen","four · teen","for-TEEN"], 15:["fifteen","fif · teen","fif-TEEN"],
+  16:["sixteen","six · teen","siks-TEEN"], 17:["seventeen","sev · en · teen","sev-un-TEEN"],
+  18:["eighteen","eigh · teen","ay-TEEN"], 19:["nineteen","nine · teen","nyn-TEEN"],
+  20:["twenty","twen · ty","TWEN-tee"], 30:["thirty","thir · ty","THUR-tee"],
+  40:["forty","for · ty","FOR-tee"], 50:["fifty","fif · ty","FIF-tee"],
+  60:["sixty","six · ty","SIKS-tee"], 70:["seventy","sev · en · ty","SEV-un-tee"],
+  80:["eighty","eigh · ty","AY-tee"], 90:["ninety","nine · ty","NYN-tee"],
+  100:["one hundred","one hun · dred","wun HUN-drid"]
+};
+function numInfo(n){
+  n = parseInt(n,10);
+  if(NUMW[n]) return NUMW[n];
+  if(n>20 && n<100){
+    const t=NUMW[tens(n)], o=NUMW[ones(n)];
+    if(t && o) return [t[0]+"-"+o[0], t[1]+" · "+o[1], t[2]+" "+o[2]];
+  }
+  return [String(n), String(n), ""];
+}
+
+let userName="", completed=[], currentDay=null;
+let pIdx=0, pSolved=[], typed="", wrongTries=0;
+let sigCanvas, sigCtx, drawing=false, hasSig=false;
+let checks=[false,false,false];
+const KEY='trent_math_v1';
+
+/* ---------- SPEECH (phone's built-in voice, Web Speech API) ---------- */
+let ttsVoice=null;
+function pickVoice(){
+  if(!('speechSynthesis' in window)) return;
+  const vs=speechSynthesis.getVoices();
+  ttsVoice = vs.find(v=>/en[-_]US/i.test(v.lang)) || vs.find(v=>/^en/i.test(v.lang)) || vs[0] || null;
+}
+if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged=pickVoice; pickVoice(); }
+function speak(text){
+  if(!('speechSynthesis' in window) || !text) return;
+  try {
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.rate=0.85; u.pitch=1; u.lang='en-US';
+    if(ttsVoice) u.voice=ttsVoice;
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+
+/* ---------- WORD / NUMBER POPUP (the reading help) ---------- */
+function fallbackSyl(w){
+  const m = w.toLowerCase().match(/[^aeiouy]*[aeiouy]+(?:[^aeiouy](?=[^aeiouy]))?|[^aeiouy]+$/gi);
+  return (m && m.length) ? m.join(' · ') : w;
+}
+function showPop(word, syl, say, speakText){
+  document.getElementById('wpWord').textContent = word;
+  document.getElementById('wpSyl').textContent = syl;
+  const sayEl=document.getElementById('wpSay');
+  if(say){ sayEl.textContent='“'+say+'”'; sayEl.style.display=''; }
+  else { sayEl.style.display='none'; }
+  document.getElementById('wpSpk').onclick=(e)=>{ e.stopPropagation(); speak(speakText); };
+  document.getElementById('wpop').classList.add('show');
+  // no auto-play — he taps 🔊 when he wants to hear it
+}
+function openWord(el){
+  const raw = el.getAttribute('data-w');
+  const p = PRON[raw.toLowerCase()];
+  showPop(raw, p ? p[0] : fallbackSyl(raw), p ? p[1] : "", raw);
+}
+function openNum(el){
+  const raw = el.getAttribute('data-n');
+  const i = numInfo(raw);
+  showPop(raw, i[1], i[2], i[0]);
+}
+function closeWord(){ document.getElementById('wpop').classList.remove('show'); }
+
+/* ---------- RENDER (words AND numbers are tappable) ---------- */
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function renderLine(line){
+  return line.split(/([A-Za-z]+|\d+)/).map(tok=>{
+    if(/^[A-Za-z]+$/.test(tok)) return `<span class="word" data-w="${tok}" onclick="openWord(this)">${tok}</span>`;
+    if(/^\d+$/.test(tok))       return `<span class="num" data-n="${tok}" onclick="openNum(this)">${tok}</span>`;
+    return esc(tok);
+  }).join('');
+}
+
+/* ---------- PROGRESS ---------- */
+function saveProgress(){ try{ localStorage.setItem(KEY, JSON.stringify({name:userName, completed})); showToast(); }catch(e){} }
+function loadProgress(name){
+  try{
+    const d=JSON.parse(localStorage.getItem(KEY)||'{}');
+    if(d.name && d.name.toLowerCase()===name.toLowerCase()) return d.completed||[];
+  }catch(e){}
+  return [];
+}
+function showToast(){
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1800);
+}
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function startApp(){
+  const n=document.getElementById('nameInput').value.trim();
+  if(!n){ document.getElementById('nameInput').focus(); return; }
+  userName=n; completed=loadProgress(n); showMap();
+}
+function showMap(){
+  show('map');
+  document.getElementById('mapName').textContent=userName+"'s Math";
+  const done=completed.length;
+  document.getElementById('mapProg').textContent=done+" of 10 days done";
+  document.getElementById('progFill').style.width=(done*10)+"%";
+  const list=document.getElementById('dayList'); list.innerHTML='';
+  DAYS.forEach((d,i)=>{
+    const isDone=completed.includes(i);
+    const isCur=!isDone&&(i===0||completed.includes(i-1));
+    const isLocked=!isDone&&!isCur;
+    const c=document.createElement('div');
+    c.className='day-card'+(isDone?' done':'')+(isCur?' current':'')+(isLocked?' locked':'');
+    c.innerHTML=`<div class="day-num" style="background:${d.color}">${d.day}</div><div class="day-info"><h3>${d.title}</h3><p>Day ${d.day} • 5 problems</p></div><div class="day-emoji">${d.emoji}</div>`;
+    if(!isLocked) c.onclick=()=>openDay(i);
+    list.appendChild(c);
+  });
+}
+
+/* ---------- A DAY ---------- */
+function openDay(idx){
+  currentDay=idx; pIdx=0; typed=""; wrongTries=0;
+  pSolved=DAYS[idx].problems.map(()=>false);
+  checks=[false,false,false]; hasSig=false;
+  const d=DAYS[idx];
+  document.getElementById('dDayTag').textContent='DAY '+d.day;
+  document.getElementById('dDayTag').style.color=d.color;
+  document.getElementById('dTitle').textContent=d.title;
+  document.getElementById('dEmoji').textContent=d.emoji;
+  show('day');
+  renderDay();
+}
+function renderDay(){
+  const d=DAYS[currentDay];
+  const body=document.getElementById('dayBody');
+  body.innerHTML='';
+
+  // intro
+  const ib=document.createElement('div'); ib.className='intro-box';
+  ib.style.cssText=`border-color:${d.color};background:${d.bg}`;
+  ib.innerHTML=`<div class="intro-lbl">Today 👀</div>`+
+    d.intro.map(l=>`<div class="i-line">${renderLine(l)}</div>`).join('');
+  body.appendChild(ib);
+
+  const tip=document.createElement('div'); tip.className='tap-tip';
+  tip.textContent='👆 Tap any word or number to sound it out. Stuck? Tap the ?';
+  body.appendChild(tip);
+
+  if(pSolved.every(Boolean)){ renderSignoff(body,d); return; }
+
+  const p=d.problems[pIdx];
+  const op=p.op||'+';
+
+  // problem counter
+  const pc=document.createElement('div'); pc.className='p-count';
+  pc.innerHTML=`<div class="p-count-txt">Problem ${pIdx+1} of ${d.problems.length}</div>`+
+    `<div class="p-dots">${pSolved.map((s,i)=>`<div class="p-dot ${s?'done':(i===pIdx?'now':'')}"></div>`).join('')}</div>`;
+  body.appendChild(pc);
+
+  // the problem
+  const card=document.createElement('div'); card.className='prob-card';
+  card.style.borderColor=d.color;
+  let inner='';
+  if(p.text){
+    // word problem — the numbers stay in the story, he decides + or -
+    inner += `<div class="wp-lines">${p.text.map(l=>`<div class="wp-line">${renderLine(l)}</div>`).join('')}</div>`;
+  } else {
+    // stacked like real math: bigger number on top
+    const top = (op==='+') ? Math.max(p.a,p.b) : p.a;
+    const bot = (op==='+') ? Math.min(p.a,p.b) : p.b;
+    inner += `<div class="stack">
+        <div class="st-row"><span class="num" data-n="${top}" onclick="openNum(this)">${top}</span></div>
+        <div class="st-row"><span class="st-op">${op}</span><span class="num" data-n="${bot}" onclick="openNum(this)">${bot}</span></div>
+        <div class="st-rule"></div>
+      </div>`;
+  }
+  inner += `<div class="ans-box" id="ansBox">?</div>
+      <div class="p-fb" id="pFb"></div>
+      <button class="help-btn" onclick="openHelp()">❓ How do I do this?</button>
+      <div class="pad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="key" onclick="tapKey('${n}')">${n}</button>`).join('')}
+        <button class="key key-del" onclick="tapKey('del')">⌫</button>
+        <button class="key" onclick="tapKey('0')">0</button>
+        <button class="key key-check" onclick="checkAnswer()">Check ✓</button>
+      </div>`;
+  card.innerHTML=inner;
+  body.appendChild(card);
+  paintAns();
+}
+function ansOf(p){ return (p.op==='-') ? p.a-p.b : p.a+p.b; }
+function paintAns(){
+  const box=document.getElementById('ansBox');
+  if(!box) return;
+  box.textContent = typed==="" ? "?" : typed;
+  box.className = 'ans-box'+(typed===""?"":" filled");
+}
+function tapKey(k){
+  const fb=document.getElementById('pFb');
+  if(fb){ fb.textContent=''; fb.className='p-fb'; }
+  if(k==='del') typed=typed.slice(0,-1);
+  else if(typed.length<3) typed+=k;
+  paintAns();
+}
+function checkAnswer(){
+  if(typed==="") return;
+  const d=DAYS[currentDay], p=d.problems[pIdx];
+  const box=document.getElementById('ansBox'), fb=document.getElementById('pFb');
+  if(parseInt(typed,10)===ansOf(p)){
+    pSolved[pIdx]=true;
+    box.className='ans-box good';
+    fb.textContent='✅ Yes! That is right!'; fb.className='p-fb good';
+    const nxt=document.createElement('button');
+    nxt.className='next-btn';
+    const last=pSolved.every(Boolean);
+    nxt.textContent = last ? 'Sign Off ✍️' : 'Next Problem ➜';
+    nxt.onclick=()=>{ if(!last){ pIdx=nextUnsolved(); } typed=""; wrongTries=0; renderDay(); window.scrollTo(0,0); };
+    document.querySelector('.pad').replaceWith(nxt);
+  } else {
+    wrongTries++;
+    box.className='ans-box bad';
+    fb.textContent = wrongTries>=2 ? '❌ Not yet. Tap the ? — it shows you how.' : '❌ Not yet. Try again.';
+    fb.className='p-fb bad';
+    setTimeout(()=>{ typed=""; paintAns(); },700);
+  }
+}
+function nextUnsolved(){
+  for(let i=pIdx+1;i<pSolved.length;i++) if(!pSolved[i]) return i;
+  for(let i=0;i<pSolved.length;i++) if(!pSolved[i]) return i;
+  return pIdx;
+}
+
+/* ---------- THE "?" HELP ---------- */
+function openHelp(){
+  const d=DAYS[currentDay], p=d.problems[pIdx];
+  const h=d.help(p);
+  document.getElementById('hTitle').textContent=h.title;
+  document.getElementById('hLines').innerHTML = h.lines.map(l=>{
+    const big = l.startsWith('BIG:');
+    const txt = big ? l.slice(4) : l;
+    return `<div class="h-line${big?' big':''}">${renderLine(txt)}</div>`;
+  }).join('');
+  document.getElementById('hpop').classList.add('show');
+}
+function closeHelp(){ document.getElementById('hpop').classList.remove('show'); }
+
+/* ---------- SIGN OFF (still earned: 5 right + 3 boxes + signature) ---------- */
+function renderSignoff(body,d){
+  const done=document.createElement('div'); done.className='prob-card';
+  done.style.cssText=`border-color:${d.color};background:${d.bg}`;
+  done.innerHTML=`<div style="font-size:52px">🎯</div><div style="font-size:24px;font-weight:900;color:${d.color};margin-top:6px">All 5 done!</div><div style="font-size:17px;font-weight:700;color:#374151;margin-top:6px">You got every one right.</div>`;
+  body.appendChild(done);
+
+  const sd=document.createElement('div'); sd.className='sec';
+  sd.innerHTML=`<div class="sec-title" style="color:${d.color}">Sign Off ✍️</div><div style="height:6px"></div>`+
+    ['I did every problem','I checked my work','I am proud of myself'].map((l,i)=>`<div class="chk-item" id="chk${i}" onclick="toggleChk(${i})"><div class="chk-box" id="box${i}"></div><span>${l}</span></div>`).join('')+
+    `<div class="sig-wrap"><div class="sig-lbl">Sign your name</div><div class="sig-cw"><canvas id="sigCanvas" height="130"></canvas><div class="sig-hint" id="sigHint">✍️ Draw your name here</div></div><button class="sig-clear" onclick="clearSig()">Clear ✕</button></div>`+
+    `<button class="finish-btn" id="finBtn" style="background:${d.color}" onclick="finishDay()" disabled>Done for Today! 🎉</button>`;
+  body.appendChild(sd);
+  setupCanvas();
+}
+function toggleChk(i){
+  checks[i]=!checks[i];
+  document.getElementById('chk'+i).classList.toggle('checked',checks[i]);
+  document.getElementById('box'+i).textContent=checks[i]?'✓':'';
+  checkReady();
+}
+function checkReady(){
+  const b=document.getElementById('finBtn');
+  if(b) b.disabled=!(checks.every(Boolean)&&hasSig&&pSolved.every(Boolean));
+}
+function setupCanvas(){
+  sigCanvas=document.getElementById('sigCanvas');
+  sigCanvas.width=sigCanvas.parentElement.clientWidth||340;
+  sigCtx=sigCanvas.getContext('2d');
+  sigCtx.strokeStyle='#1A1A1A'; sigCtx.lineWidth=4; sigCtx.lineCap='round'; sigCtx.lineJoin='round';
+  function pos(e){const r=sigCanvas.getBoundingClientRect(),src=e.touches?e.touches[0]:e;return{x:src.clientX-r.left,y:src.clientY-r.top};}
+  sigCanvas.addEventListener('mousedown',e=>{drawing=true;const p=pos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);});
+  sigCanvas.addEventListener('mousemove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();hasSig=true;document.getElementById('sigHint').style.opacity='0';checkReady();});
+  sigCanvas.addEventListener('mouseup',()=>drawing=false);
+  sigCanvas.addEventListener('touchstart',e=>{drawing=true;const p=pos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);},{passive:false});
+  sigCanvas.addEventListener('touchmove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();hasSig=true;document.getElementById('sigHint').style.opacity='0';checkReady();},{passive:false});
+  sigCanvas.addEventListener('touchend',()=>drawing=false);
+}
+function clearSig(){ sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height); hasSig=false; document.getElementById('sigHint').style.opacity='1'; checkReady(); }
+function finishDay(){
+  if(!completed.includes(currentDay)) completed.push(currentDay);
+  saveProgress();
+  const d=DAYS[currentDay];
+  document.getElementById('celName').textContent=userName+'!';
+  const msgs=["You finished Day "+d.day+".\nAll 5 problems. Nice work!","Day "+d.day+" is done.\nYour math is getting stronger!","Another day done, "+userName+".\nYou did not quit — that is the whole game."];
+  document.getElementById('celMsg').textContent=msgs[currentDay%msgs.length];
+  show('celebrate');
+}
+
+window.onload=()=>{
+  try{ const d=JSON.parse(localStorage.getItem(KEY)||'{}'); if(d.name) document.getElementById('nameInput').value=d.name; }catch(e){}
+  const wp=document.getElementById('wpop');
+  if(wp) wp.addEventListener('click', closeWord);
+  // tapping the dark area outside the help sheet closes it (but not taps inside it)
+  const hp=document.getElementById('hpop');
+  if(hp) hp.addEventListener('click', e=>{ if(e.target===hp) closeHelp(); });
+  // a real keyboard works too (for a laptop)
+  document.addEventListener('keydown', e=>{
+    if(!document.getElementById('day').classList.contains('active')) return;
+    if(document.getElementById('hpop').classList.contains('show')) return;
+    if(/^[0-9]$/.test(e.key)) tapKey(e.key);
+    else if(e.key==='Backspace') tapKey('del');
+    else if(e.key==='Enter') checkAnswer();
+  });
+};
+</script>
+</body>
+</html>
