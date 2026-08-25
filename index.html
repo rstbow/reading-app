@@ -37,6 +37,7 @@
   .pick.reading .bar-fill { background:var(--green); }
   .pick.math .bar-fill { background:var(--blue); }
   .done-tag { color:var(--gold); }
+  .next-tag { color:#94A3B8; }
 
   .foot { margin-top:32px; font-size:15px; font-weight:700; color:rgba(255,255,255,0.75); line-height:1.6; }
 </style>
@@ -53,7 +54,7 @@
         <div class="pick-emoji">📖</div>
         <div class="pick-t">
           <h2>Reading</h2>
-          <p id="readSub">Johnny Plants the World • 10 Days</p>
+          <p id="readSub">Book 1 • Johnny Plants the World</p>
         </div>
         <div class="pick-go">➜</div>
       </div>
@@ -68,7 +69,7 @@
         <div class="pick-emoji">➕</div>
         <div class="pick-t">
           <h2>Math</h2>
-          <p id="mathSub">Add &amp; Take Away • 10 Days</p>
+          <p id="mathSub">Book 1 • Add &amp; Take Away</p>
         </div>
         <div class="pick-go">➜</div>
       </div>
@@ -84,15 +85,23 @@
 <script>
 /* ---------------------------------------------------------------------------
    THE MENU — this is what Trent lands on from the texted link.
-   Pick Reading or Math, then he sees that app's 10 days.
+   Pick Reading or Math, then he sees that book's 10 days.
 
-   To point Reading at a different series later, change these two lines
-   (the file it opens + the save key it reads progress from):
+   BOOKS, IN ORDER. The menu opens the FIRST book he has not finished, so
+   shipping a new book never yanks him out of one he is part way through —
+   the new one shows up on its own the day he finishes the last one.
+
+   To add Book 5 (or Math Book 3): append one line to the right list below.
+   `key` must match the KEY constant inside that file, or progress reads 0.
 --------------------------------------------------------------------------- */
-const READING_FILE = 'series3-johnny-plants-the-world.html';
-const READING_KEY  = 'trent_reading_world_v1';   // must match KEY in that file
-const READING_NAME = 'Johnny Plants the World • 10 Days';
-const MATH_KEY     = 'trent_math_v1';            // must match KEY in math.html
+const READING = [
+  { file:'series3-johnny-plants-the-world.html', key:'trent_reading_world_v1', name:'Johnny Plants the World' },
+  { file:'series4-the-tree-that-woke-up.html',   key:'trent_reading_tree_v1',  name:'The Tree That Woke Up'   },
+];
+const MATH = [
+  { file:'math.html',  key:'trent_math_v1',  name:'Add & Take Away'         },
+  { file:'math2.html', key:'trent_math2_v1', name:'Carry & Take a Ten Back' },
+];
 
 function daysDone(key){
   try {
@@ -101,27 +110,35 @@ function daysDone(key){
   } catch(e){ return 0; }
 }
 function savedName(){
-  for (const k of [READING_KEY, MATH_KEY]) {
+  for (const b of READING.concat(MATH)) {
     try {
-      const d = JSON.parse(localStorage.getItem(k) || '{}');
+      const d = JSON.parse(localStorage.getItem(b.key) || '{}');
       if (d.name) return d.name;
     } catch(e){}
   }
   return '';
 }
-function paint(prefix, key){
-  const n = daysDone(key);
+// the book he is on = the first one that is not finished (else the last one)
+function bookIndex(books){
+  for (let i = 0; i < books.length; i++) if (daysDone(books[i].key) < 10) return i;
+  return books.length - 1;
+}
+function paint(prefix, books){
+  const i = bookIndex(books), b = books[i], n = daysDone(b.key);
+  const more = i < books.length - 1;
+  document.getElementById(prefix+'Card').href = b.file;
+  document.getElementById(prefix+'Sub').textContent = 'Book ' + (i+1) + ' • ' + b.name;
   document.getElementById(prefix+'Prog').textContent = n + ' of 10 days done';
   document.getElementById(prefix+'Fill').style.width = (n*10) + '%';
-  document.getElementById(prefix+'Done').innerHTML = n >= 10 ? '<span class="done-tag">★ ALL DONE</span>' : '';
+  document.getElementById(prefix+'Done').innerHTML =
+    n >= 10  ? '<span class="done-tag">★ ALL DONE</span>' :
+    more     ? '<span class="next-tag">Book ' + (i+2) + ' next</span>' : '';
 }
 window.onload = () => {
-  document.getElementById('readCard').href = READING_FILE;
-  document.getElementById('readSub').textContent = READING_NAME;
   const name = savedName();
   if (name) document.getElementById('title').textContent = name + "'s Adventure";
-  paint('read', READING_KEY);
-  paint('math', MATH_KEY);
+  paint('read', READING);
+  paint('math', MATH);
 };
 </script>
 </body>
