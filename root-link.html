@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Root Link</title>
+<style>
+  :root { --gold:#F9A825; --green:#388E3C; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif; color:white; overflow:hidden;
+         background:linear-gradient(160deg,#0D3B1E 0%,#14532D 45%,#0D47A1 100%);
+         display:flex; flex-direction:column; align-items:center; user-select:none; -webkit-user-select:none; touch-action:manipulation; }
+  #app { width:100%; max-width:480px; padding:10px 12px 12px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+
+  .hdr { width:100%; display:flex; align-items:center; gap:8px; }
+  .ib { width:44px; height:44px; border-radius:12px; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.3); color:white; font-size:20px; display:flex; align-items:center; justify-content:center; text-decoration:none; cursor:pointer; font-family:inherit; flex-shrink:0; }
+  .ib:active { transform:scale(0.94); }
+  .lvl { flex:1; font-size:20px; font-weight:900; text-align:center; line-height:1.1; }
+  .lvl small { display:block; font-size:13px; font-weight:800; opacity:0.85; }
+
+  .goal { width:100%; }
+  .goal-lbl { display:flex; justify-content:space-between; font-size:14px; font-weight:800; opacity:0.92; margin-bottom:4px; }
+  .goal-bar { background:rgba(255,255,255,0.22); height:14px; border-radius:20px; overflow:hidden; }
+  .goal-fill { height:100%; width:0%; background:linear-gradient(90deg,#A5D6A7,#66BB6A); border-radius:20px; transition:width 0.3s; }
+
+  #wrap { position:relative; border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.4); border:3px solid #6D4C41; }
+  canvas#board { display:block; touch-action:none; }
+
+  .bar { width:100%; display:flex; gap:10px; justify-content:center; }
+  .btn2 { flex:1; max-width:170px; height:50px; border-radius:14px; border:2px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.16); color:white; font-family:inherit; font-size:18px; font-weight:900; cursor:pointer; }
+  .btn2:active { transform:scale(0.95); }
+
+  .ov { position:absolute; inset:0; background:rgba(6,30,18,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px; gap:12px; }
+  .ov.show { display:flex; }
+  .ov h2 { font-size:30px; font-weight:900; line-height:1.1; }
+  .ov p { font-size:17px; font-weight:700; opacity:0.92; line-height:1.4; }
+  .ov .steps { text-align:left; font-size:18px; font-weight:800; line-height:1.9; }
+  .ov .big { font-size:52px; line-height:1; }
+  .btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:16px; padding:16px 36px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; box-shadow:0 6px 24px rgba(249,168,37,0.45); }
+  .btn:active { transform:scale(0.96); }
+  .foot { font-size:13px; font-weight:700; opacity:0.75; text-align:center; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <a class="ib" href="index.html" title="Menu">🏠</a>
+    <div class="lvl" id="lvl">🌱 Level 1<small id="sub">Connect the matching plants</small></div>
+    <button class="ib" id="snd" title="Sound">🔊</button>
+  </div>
+
+  <div class="goal">
+    <div class="goal-lbl"><span>🌱 Roots joined</span><span id="goalTxt">0 / 3</span></div>
+    <div class="goal-bar"><div class="goal-fill" id="goalFill"></div></div>
+  </div>
+
+  <div id="wrap">
+    <canvas id="board"></canvas>
+    <div class="ov show" id="ov"></div>
+  </div>
+
+  <div class="bar">
+    <button class="btn2" id="hint">💡 Hint</button>
+    <button class="btn2" id="clear">↺ Start over</button>
+  </div>
+  <div class="foot">Drag from a plant to its twin 👆</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ---------------------------------------------------------------------------
+   ROOT LINK — a Flow Free style puzzle for Trent.
+   Matching plants sit on a grid. Drag from one to its twin to grow a root
+   between them. Roots cannot cross: a new root cuts an old one. Join every
+   pair to win. Fill every square for an extra star.
+   Each puzzle is made from a real solution, so it can always be solved.
+   Only his best level and stars are saved (KEY below).
+--------------------------------------------------------------------------- */
+const KEY = 'trent_rootlink_v1';
+const COLORS = ['#E53935','#1E88E5','#FB8C00','#8E24AA','#00ACC1','#7CB342','#F06292','#FDD835'];
+const PLANTS = ['🌳','🌲','🌴','🌵','🌻','🍄','🌷','🌸'];
+const SPROUTS = ['🌱','🌿','🌿','🪴','🌳'];
+const DIRS = [[-1,0],[0,1],[1,0],[0,-1]];
+
+const $ = id => document.getElementById(id);
+let board, ctx, cell = 60, dpr = 1;
+let n = 4, pairs = 3, level = 1, stars = 0, best = { level:1, stars:0 };
+let ends = [], sol = [], paths = [], owner = [];
+let drag = null, phase = 'intro', hintUsed = false, hint = null, soundOn = true, actx = null, token = 0, doneFlash = 0;
+
+/* ---------- save ---------- */
+function loadBest(){ try { const d = JSON.parse(localStorage.getItem(KEY)||'{}'); if (d.level) best = { level:d.level|0, stars:d.stars|0 }; } catch(e){} }
+function saveBest(){ try { localStorage.setItem(KEY, JSON.stringify(best)); } catch(e){} }
+
+/* ---------- sound ---------- */
+function beep(freq, dur, type, vol){
+  if (!soundOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq; g.gain.value = vol || 0.05;
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+    o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + dur);
+  } catch(e){}
+}
+const sfxStep = () => beep(300 + Math.random()*40, 0.04, 'triangle', 0.03);
+const sfxLink = () => { beep(660, 0.12, 'sine', 0.06); setTimeout(()=>beep(880, 0.14, 'sine', 0.06), 90); };
+const sfxCut  = () => beep(180, 0.1, 'square', 0.03);
+const sfxWin  = () => [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'triangle',0.07), i*110));
+
+/* ---------- puzzle maker: a random snake through every square, cut into pieces ---------- */
+function randomHamPath(size){
+  let P = [];
+  for (let r=0;r<size;r++){ const row = []; for (let c=0;c<size;c++) row.push([r,c]); P = P.concat(r%2 ? row.reverse() : row); }
+  const pos = new Int16Array(size*size);
+  const reindex = () => P.forEach((p,i)=>{ pos[p[0]*size+p[1]] = i; });
+  reindex();
+  const rounds = size*size*40;
+  for (let it=0; it<rounds; it++){
+    const tail = Math.random() < 0.5;
+    const end = tail ? P[P.length-1] : P[0], prev = tail ? P[P.length-2] : P[1];
+    const nbs = [];
+    DIRS.forEach(d => {
+      const r = end[0]+d[0], c = end[1]+d[1];
+      if (r>=0 && c>=0 && r<size && c<size && !(r===prev[0] && c===prev[1])) nbs.push([r,c]);
+    });
+    const nb = nbs[Math.floor(Math.random()*nbs.length)], j = pos[nb[0]*size+nb[1]];
+    if (tail) P = P.slice(0, j+1).concat(P.slice(j+1).reverse());
+    else      P = P.slice(0, j).reverse().concat(P.slice(j));
+    reindex();
+  }
+  return P;
+}
+function makePuzzle(size, k){
+  for (let attempt=0; attempt<200; attempt++){
+    const P = randomHamPath(size), total = size*size, lens = new Array(k).fill(3);
+    for (let i=0;i<total-3*k;i++) lens[Math.floor(Math.random()*k)]++;
+    const segs = []; let at = 0, ok = true;
+    for (let i=0;i<k;i++){
+      const seg = P.slice(at, at+lens[i]); at += lens[i];
+      const a = seg[0], b = seg[seg.length-1];
+      if (Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1]) < 2) ok = false;   // not right next to each other
+      segs.push(seg);
+    }
+    if (ok) return segs;
+  }
+  return null;
+}
+function sizeFor(l){ return l<=3 ? 4 : l<=6 ? 5 : l<=9 ? 6 : l<=12 ? 7 : 8; }
+
+/* ---------- level ---------- */
+function newLevel(){
+  n = sizeFor(level); pairs = n - 1;
+  let segs = makePuzzle(n, pairs);
+  if (!segs) segs = makePuzzle(4, 3);
+  sol = segs;
+  ends = segs.map(s => [ s[0], s[s.length-1] ]);
+  paths = ends.map(() => []);
+  owner = []; for (let r=0;r<n;r++){ owner.push(new Array(n).fill(-1)); }
+  drag = null; hint = null; hintUsed = false; token++;
+  phase = 'play';
+  resize(); hideOv(); updateHud();
+}
+function endAt(r, c){
+  for (let k=0;k<ends.length;k++) for (let e=0;e<2;e++) if (ends[k][e][0]===r && ends[k][e][1]===c) return k;
+  return -1;
+}
+function isDone(k){
+  const p = paths[k];
+  if (p.length < 2) return false;
+  const a = ends[k][0], b = ends[k][1], f = p[0], l = p[p.length-1];
+  return (same(f,a) && same(l,b)) || (same(f,b) && same(l,a));
+}
+const same = (p, q) => p[0]===q[0] && p[1]===q[1];
+
+/* ---------- drawing roots by dragging ---------- */
+function clearOwner(cells){ cells.forEach(p => { owner[p[0]][p[1]] = -1; }); }
+function startDrag(r, c){
+  const e = endAt(r, c);
+  if (e >= 0){
+    clearOwner(paths[e]); paths[e] = [[r,c]]; owner[r][c] = e; drag = { k:e };
+  } else if (owner[r][c] >= 0){
+    const k = owner[r][c], i = paths[k].findIndex(p => same(p,[r,c]));
+    clearOwner(paths[k].slice(i+1)); paths[k] = paths[k].slice(0, i+1); drag = { k:k };
+  } else return;
+  hint = null; sfxStep(); updateHud();
+}
+function stepTo(r, c){
+  const k = drag.k, p = paths[k], head = p[p.length-1];
+  if (Math.abs(head[0]-r) + Math.abs(head[1]-c) !== 1) return;
+  if (p.length >= 2 && same(p[p.length-2], [r,c])){ owner[head[0]][head[1]] = -1; p.pop(); sfxStep(); return; }   // back up
+  if (isDone(k)) return;                                  // already reached its twin
+  const e = endAt(r, c);
+  if (e >= 0 && e !== k) return;                          // another plant: blocked
+  if (e === k && same(p[0], [r,c])) return;               // not back onto where we began
+  const o = owner[r][c];
+  if (o === k && e !== k){                                // crossed its own root: loop back
+    const i = p.findIndex(q => same(q,[r,c])); clearOwner(p.slice(i+1)); paths[k] = p.slice(0, i+1); sfxStep(); return;
+  }
+  if (o >= 0 && o !== k){                                 // cut someone else's root
+    const q = paths[o], i = q.findIndex(x => same(x,[r,c]));
+    clearOwner(q.slice(i)); paths[o] = q.slice(0, i); sfxCut();
+  }
+  paths[k].push([r,c]); owner[r][c] = k;
+  if (isDone(k)) sfxLink(); else sfxStep();
+}
+function moveTo(r, c){
+  if (!drag) return;
+  let head = paths[drag.k][paths[drag.k].length-1], guard = 0;
+  while ((head[0] !== r || head[1] !== c) && guard++ < 40){
+    // walk one square at a time toward the finger (rows first if far, so fast swipes still work)
+    const dr = r - head[0], dc = c - head[1];
+    let nr = head[0], nc = head[1];
+    if (Math.abs(dr) >= Math.abs(dc) && dr !== 0) nr += Math.sign(dr); else nc += Math.sign(dc);
+    const before = paths[drag.k].length, lastCell = paths[drag.k][before-1];
+    stepTo(nr, nc);
+    const np = paths[drag.k]; const h2 = np[np.length-1];
+    if (same(h2, head) && np.length === before) break;      // blocked
+    head = h2;
+  }
+  updateHud();
+  checkWin();
+}
+function cellFromEvent(e){
+  const rect = board.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (board.width/dpr / rect.width);
+  const y = (e.clientY - rect.top)  * (board.height/dpr / rect.height);
+  return [ Math.max(0, Math.min(n-1, Math.floor(y/cell))), Math.max(0, Math.min(n-1, Math.floor(x/cell))) ];
+}
+function onDown(e){ if (phase !== 'play') return; e.preventDefault(); try { board.setPointerCapture(e.pointerId); } catch(x){} const c = cellFromEvent(e); startDrag(c[0], c[1]); }
+function onMove(e){ if (!drag || phase !== 'play') return; e.preventDefault(); const c = cellFromEvent(e); moveTo(c[0], c[1]); }
+function onUp(){ drag = null; }
+
+/* ---------- win ---------- */
+function filledCount(){ let f = 0; for (let r=0;r<n;r++) for (let c=0;c<n;c++) if (owner[r][c] >= 0) f++; return f; }
+function doneCount(){ let d = 0; for (let k=0;k<ends.length;k++) if (isDone(k)) d++; return d; }
+function checkWin(){
+  if (phase !== 'play' || doneCount() < ends.length) return;
+  phase = 'won'; drag = null;
+  const full = filledCount() === n*n;
+  const got = 1 + (full ? 1 : 0) + (hintUsed ? 0 : 1);
+  stars += got;
+  if (level >= best.level){ best.level = level + 1; }
+  best.stars = Math.max(best.stars, stars); saveBest();
+  sfxWin();
+  const line = '⭐'.repeat(got) + '☆'.repeat(3-got);
+  const tip = full ? '' : '<p>Fill every square for an extra ⭐</p>';
+  setTimeout(() => showOv('<div class="big">'+SPROUTS[Math.min(level,SPROUTS.length)-1]+'</div><h2>Level '+level+' done!</h2><div style="font-size:34px">'+line+'</div>'+tip+'<button class="btn" id="ovBtn">Next level ➜</button>', () => { level++; newLevel(); }), 450);
+}
+function showOv(html, onBtn){
+  const ov = $('ov'); ov.innerHTML = html; ov.classList.add('show');
+  const b = $('ovBtn'); if (b) b.onclick = () => { hideOv(); onBtn(); };
+}
+function hideOv(){ $('ov').classList.remove('show'); }
+function showIntro(){
+  phase = 'intro';
+  showOv('<div class="big">🌳</div><h2>Root Link</h2>'
+    + '<div class="steps">1️⃣ Touch a plant<br>2️⃣ Drag to the same plant<br>3️⃣ Roots cannot cross!</div>'
+    + '<p>Best: 🌱 level '+(best.level)+'</p><button class="btn" id="ovBtn">Play!</button>', () => { level = 1; stars = 0; newLevel(); });
+}
+
+/* ---------- hud ---------- */
+function updateHud(){
+  const done = doneCount();
+  $('lvl').innerHTML = SPROUTS[Math.min(level,SPROUTS.length)-1] + ' Level ' + level + '<small>' + stars + ' ⭐</small>';
+  $('goalTxt').textContent = done + ' / ' + ends.length;
+  $('goalFill').style.width = (ends.length ? done/ends.length*100 : 0) + '%';
+}
+
+/* ---------- drawing ---------- */
+function resize(){
+  dpr = window.devicePixelRatio || 1;
+  const availW = Math.min(window.innerWidth - 30, 456);
+  const availH = window.innerHeight - 240;
+  cell = Math.max(34, Math.floor(Math.min(availW/n, availH/n)));
+  board.width = cell*n*dpr; board.height = cell*n*dpr;
+  board.style.width = cell*n + 'px'; board.style.height = cell*n + 'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function strokeCells(cells, width, color, dash){
+  if (cells.length < 1) return;
+  ctx.beginPath();
+  cells.forEach((p,i)=>{ const x=(p[1]+0.5)*cell, y=(p[0]+0.5)*cell; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+  if (cells.length === 1){ const p = cells[0]; ctx.lineTo((p[1]+0.5)*cell+0.01, (p[0]+0.5)*cell); }
+  ctx.lineWidth = width; ctx.strokeStyle = color; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]);
+}
+function draw(now){
+  const S = cell;
+  ctx.clearRect(0,0,S*n,S*n);
+  for (let r=0;r<n;r++) for (let c=0;c<n;c++){
+    ctx.fillStyle = (r+c)%2 ? '#4A3426' : '#53392A';
+    ctx.fillRect(c*S, r*S, S, S);
+    const o = owner[r] && owner[r][c];
+    if (o >= 0){ ctx.globalAlpha = 0.22; ctx.fillStyle = COLORS[o]; ctx.fillRect(c*S, r*S, S, S); ctx.globalAlpha = 1; }
+    ctx.strokeStyle = 'rgba(255,230,190,0.12)'; ctx.lineWidth = 1; ctx.strokeRect(c*S+0.5, r*S+0.5, S-1, S-1);
+  }
+  // roots
+  paths.forEach((p,k) => {
+    if (!p.length) return;
+    strokeCells(p, S*0.42, 'rgba(0,0,0,0.35)');
+    strokeCells(p, S*0.34, COLORS[k]);
+    if (isDone(k)) strokeCells(p, S*0.12, 'rgba(255,255,255,0.55)');
+  });
+  // hint: show where one root could go
+  if (hint && now < hint.until){
+    const pulse = 0.45 + 0.35*Math.sin(now/130);
+    ctx.globalAlpha = pulse; strokeCells(sol[hint.k], S*0.26, '#FFFFFF', [S*0.2, S*0.2]); ctx.globalAlpha = 1;
+  }
+  // plants
+  ends.forEach((e,k) => e.forEach(p => {
+    const x = (p[1]+0.5)*S, y = (p[0]+0.5)*S;
+    ctx.beginPath(); ctx.arc(x, y, S*0.36, 0, Math.PI*2);
+    ctx.fillStyle = COLORS[k]; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
+    ctx.font = Math.floor(S*0.42)+'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+    ctx.fillText(PLANTS[k], x, y + 1);
+  }));
+}
+let last = 0;
+function frame(ts){ draw(ts); requestAnimationFrame(frame); }
+
+/* ---------- boot ---------- */
+function boot(){
+  board = $('board'); ctx = board.getContext('2d');
+  loadBest();
+  board.addEventListener('pointerdown', onDown);
+  board.addEventListener('pointermove', onMove);
+  board.addEventListener('pointerup', onUp);
+  board.addEventListener('pointercancel', onUp);
+  $('clear').onclick = () => { if (phase !== 'play') return; paths = ends.map(() => []); owner.forEach(row => row.fill(-1)); drag = null; hint = null; updateHud(); };
+  $('hint').onclick = () => {
+    if (phase !== 'play') return;
+    const open = ends.map((e,k) => k).filter(k => !isDone(k));
+    if (!open.length) return;
+    hintUsed = true;
+    hint = { k: open[Math.floor(Math.random()*open.length)], until: performance.now() + 3000 };
+  };
+  $('snd').onclick = () => { soundOn = !soundOn; $('snd').textContent = soundOn ? '🔊' : '🔇'; };
+  window.addEventListener('resize', () => { if (ends.length) resize(); });
+  // a tiny board behind the intro
+  n = 4; ends = []; paths = []; owner = []; for (let r=0;r<n;r++) owner.push(new Array(n).fill(-1));
+  resize(); updateHud(); showIntro();
+  requestAnimationFrame(frame);
+  window.__root = {
+    state: () => ({ phase, level, stars, n, ends, paths: paths.map(p=>p.slice()), done: doneCount(), filled: filledCount(), cell }),
+    solution: () => sol.map(s => s.map(p => p.slice()))
+  };
+}
+window.addEventListener('load', boot);
+})();
+</script>
+</body>
+</html>

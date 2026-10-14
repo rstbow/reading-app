@@ -104,13 +104,14 @@ const MATH = [
 
 // games: no days, just a best score he can chase (saved by the game itself)
 const GAMES = [
-  { emoji:'🚰', file:'pipe-flow.html', key:'trent_pipeflow_v1', name:'Pipe Flow' },
+  { emoji:'🚰', file:'pipe-flow.html', key:'trent_pipeflow_v1', name:'Pipe Flow', hint:'Build pipes. Keep the water going!' },
+  { emoji:'🌳', file:'root-link.html', key:'trent_rootlink_v1', name:'Root Link', hint:'Join the matching plants with roots!' },
 ];
 function gameCard(g){
   let best = '';
   try {
     const d = JSON.parse(localStorage.getItem(g.key) || '{}');
-    if (d.level) best = 'Best: level ' + d.level + ' • ' + (d.score || 0) + ' points';
+    if (d.level) best = 'Best: level ' + d.level + (d.score ? ' • ' + d.score + ' points' : '') + (d.stars ? ' • ' + d.stars + ' ⭐' : '');
   } catch(e){}
   const a = document.createElement('a');
   a.className = 'pick game';
@@ -118,7 +119,7 @@ function gameCard(g){
   a.innerHTML = '<div class="pick-top"><div class="pick-emoji"></div><div class="pick-t"><h2></h2><p></p></div><div class="pick-go">➜</div></div>';
   a.querySelector('.pick-emoji').textContent = g.emoji;
   a.querySelector('h2').textContent = g.name;
-  a.querySelector('p').textContent = best || 'Build pipes. Keep the water going!';
+  a.querySelector('p').textContent = best || g.hint;
   return a;
 }
 function daysDone(key){
