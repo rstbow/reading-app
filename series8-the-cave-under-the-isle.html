@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Trent's Reading Adventure</title>
+<style>
+  :root {
+    --green:#388E3C; --green-dark:#1B5E20; --green-light:#E8F5E9;
+    --gold:#F9A825; --red:#C62828; --muted:#6B7280; --bg:#F1F8E9;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); color:#1A1A1A; min-height:100vh; overflow-x:hidden; }
+  .screen { display:none; min-height:100vh; }
+  .screen.active { display:flex; flex-direction:column; }
+
+  /* HOME */
+  #home { background:linear-gradient(160deg,#1B5E20 0%,#2E7D32 55%,#43A047 100%); align-items:center; justify-content:center; padding:40px 24px; text-align:center; position:relative; overflow:hidden; }
+  .home-icon { font-size:90px; margin-bottom:12px; animation:float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  .home-title { font-size:38px; font-weight:900; color:white; line-height:1.15; margin-bottom:6px; text-shadow:0 4px 12px rgba(0,0,0,0.3); }
+  .home-sub { font-size:17px; color:rgba(255,255,255,0.85); margin-bottom:32px; font-weight:700; }
+  .home-card { background:rgba(255,255,255,0.13); border-radius:20px; padding:22px; width:100%; max-width:360px; border:2px solid rgba(255,255,255,0.22); margin-bottom:22px; }
+  .name-label { color:rgba(255,255,255,0.9); font-size:15px; font-weight:800; margin-bottom:10px; display:block; text-align:left; }
+  .name-input { width:100%; padding:14px 18px; border-radius:14px; border:2px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.18); color:white; font-family:inherit; font-size:20px; font-weight:800; outline:none; text-align:center; }
+  .name-input::placeholder { color:rgba(255,255,255,0.45); }
+  .name-input:focus { border-color:var(--gold); }
+  .start-btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:16px; padding:18px 44px; font-family:inherit; font-size:24px; font-weight:900; cursor:pointer; box-shadow:0 6px 24px rgba(249,168,37,0.45); transition:transform 0.15s; }
+  .start-btn:active { transform:scale(0.96); }
+  .menu-link { display:inline-block; margin-top:24px; color:rgba(255,255,255,0.85); font-size:15px; font-weight:800; text-decoration:none; padding:10px 18px; border-radius:12px; border:2px solid rgba(255,255,255,0.3); }
+  .home-btn { background:rgba(255,255,255,0.18); border:2px solid rgba(255,255,255,0.3); color:white; border-radius:12px; width:44px; height:44px; font-size:20px; cursor:pointer; text-decoration:none; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  /* MAP */
+  #map { background:var(--bg); }
+  .map-header { background:linear-gradient(135deg,#1B5E20,#388E3C); padding:20px 20px 16px; color:white; box-shadow:0 4px 16px rgba(27,94,32,0.3); }
+  .map-header-top { display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+  .map-avatar { font-size:36px; }
+  .map-hd { flex:1; }
+  .map-hd h2 { font-size:20px; font-weight:900; }
+  .map-hd p { font-size:13px; opacity:0.85; font-weight:600; }
+  .prog-wrap { background:rgba(255,255,255,0.25); border-radius:20px; height:10px; overflow:hidden; }
+  .prog-fill { height:100%; background:var(--gold); border-radius:20px; transition:width 0.6s ease; }
+  .map-scroll { flex:1; overflow-y:auto; padding:20px 18px 40px; }
+  .map-title { font-size:20px; font-weight:900; color:var(--green-dark); margin-bottom:16px; text-align:center; }
+  .day-card { display:flex; align-items:center; gap:14px; background:white; border-radius:16px; padding:14px 16px; margin-bottom:12px; box-shadow:0 3px 12px rgba(0,0,0,0.07); cursor:pointer; border:3px solid transparent; transition:transform 0.15s,border-color 0.2s; position:relative; }
+  .day-card:active { transform:scale(0.98); }
+  .day-card.locked { opacity:0.4; cursor:not-allowed; }
+  .day-card.done { border-color:var(--green); }
+  .day-card.done::after { content:'✓'; position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:24px; color:var(--green); font-weight:900; }
+  .day-card.current { border-color:var(--gold); box-shadow:0 4px 18px rgba(249,168,37,0.28); }
+  .day-num { width:50px; height:50px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:white; flex-shrink:0; }
+  .day-info h3 { font-size:17px; font-weight:800; margin-bottom:2px; }
+  .day-info p { font-size:12px; color:var(--muted); font-weight:600; }
+  .day-emoji { font-size:26px; margin-left:auto; margin-right:32px; }
+
+  /* STORY */
+  #story { background:white; }
+  .story-hdr { padding:16px 18px; display:flex; align-items:center; gap:12px; border-bottom:2px solid #F0F4F8; position:sticky; top:0; background:white; z-index:10; }
+  .back-btn { width:42px; height:42px; border-radius:12px; border:none; background:#F0F4F8; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .back-btn:active { background:#E2E8F0; }
+  .shdr-info { flex:1; }
+  .s-day-tag { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
+  .s-title { font-size:19px; font-weight:900; line-height:1.2; }
+  .s-emoji { font-size:34px; }
+  .story-body { padding:22px 22px 48px; flex:1; }
+
+  .kw-box { border-radius:14px; padding:12px 16px; margin-bottom:14px; border-left:5px solid #388E3C; }
+  .kw-lbl { font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .kw-list { display:flex; flex-wrap:wrap; gap:8px; }
+  .kw-chip { padding:6px 14px; border-radius:20px; font-size:16px; font-weight:800; color:white; }
+
+  .tap-tip { background:#E8F5E9; border-radius:12px; padding:10px 14px; margin-bottom:22px; font-size:14px; font-weight:700; color:var(--green-dark); text-align:center; }
+
+  .s-line { font-size:22px; font-weight:600; line-height:2; margin-bottom:4px; padding:2px 6px; border-radius:6px; }
+  .word { cursor:pointer; border-radius:4px; padding:0 1px; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .word:active { background:rgba(56,142,60,0.20); }
+  .s-line .hl { background:rgba(249,168,37,0.38); border-radius:4px; padding:0 3px; font-weight:900; }
+
+  /* SOUND-ALIKE WORDS (Book 6) */
+  .s-line .sa { border-bottom:4px solid #1976D2; background:rgba(25,118,210,0.12); border-radius:4px 4px 0 0; padding:0 3px; font-weight:900; }
+  .s-line .hl.sa { background:rgba(249,168,37,0.38); }
+  .sa-tip { background:#E3F2FD; border-radius:12px; padding:10px 14px; margin:-12px 0 22px; font-size:14px; font-weight:700; color:#0D47A1; text-align:center; }
+  .sa-hd { font-size:24px; font-weight:900; margin-bottom:6px; }
+  .sa-intro { font-size:19px; font-weight:700; line-height:1.5; margin-bottom:18px; }
+  .sa-word { border:3px solid #BBDEFB; background:#F5FAFF; border-radius:18px; padding:16px 18px; margin-bottom:14px; }
+  .sa-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+  .sa-big { font-size:44px; font-weight:900; color:#1565C0; word-break:break-word; }
+  .sa-spk { background:var(--green); color:white; border:none; border-radius:14px; padding:12px 18px; font-family:inherit; font-size:18px; font-weight:900; cursor:pointer; box-shadow:0 4px 12px rgba(56,142,60,0.35); flex-shrink:0; }
+  .sa-spk:active { transform:scale(0.96); }
+  .sa-means { font-size:21px; font-weight:800; line-height:1.5; margin-bottom:4px; }
+  .sa-ex { font-size:19px; font-weight:600; color:#374151; line-height:1.6; }
+  .ww-count { font-size:13px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .ww-q { font-size:24px; font-weight:800; line-height:1.5; margin-bottom:14px; }
+  .ww-opts { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
+  .ww-btn { padding:20px 18px; border-radius:16px; border:3px solid #BBDEFB; background:white; font-family:inherit; font-size:30px; font-weight:900; color:#1565C0; cursor:pointer; text-align:center; transition:all 0.15s; }
+  .ww-btn:active { transform:scale(0.98); }
+  .ww-btn.correct { background:#E8F5E9; border-color:var(--green); color:var(--green-dark); }
+  .ww-btn.wrong { background:#FFEBEE; border-color:var(--red); color:var(--red); cursor:default; }
+  .ww-done { font-size:22px; font-weight:900; color:var(--green-dark); background:#E8F5E9; border-radius:14px; padding:16px; text-align:center; }
+
+  /* WORD POPUP */
+  .wpop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:500; padding:24px; }
+  .wpop.show { display:flex; }
+  .wpop-card { background:white; border-radius:24px; padding:32px 28px 22px; text-align:center; max-width:340px; width:100%; box-shadow:0 14px 44px rgba(0,0,0,0.35); }
+  .wpop-word { font-size:42px; font-weight:900; color:#1A1A1A; margin-bottom:14px; word-break:break-word; }
+  .wpop-syl { font-size:30px; font-weight:800; color:var(--green); letter-spacing:1px; margin-bottom:6px; }
+  .wpop-say { font-size:24px; font-weight:800; color:#E65100; margin-bottom:22px; }
+  .wpop-mean { display:none; font-size:20px; font-weight:800; color:#0D47A1; background:#E3F2FD; border-radius:12px; padding:10px 14px; margin-bottom:20px; }
+  .wpop-spk { background:var(--green); color:white; border:none; border-radius:16px; padding:16px 32px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; box-shadow:0 5px 16px rgba(56,142,60,0.4); }
+  .wpop-spk:active { transform:scale(0.96); }
+  .wpop-close { margin-top:16px; font-size:13px; color:#9CA3AF; font-weight:700; }
+
+  .sec { margin-top:26px; padding-top:22px; border-top:2px solid #F0F4F8; }
+  .sec-title { font-size:21px; font-weight:900; margin-bottom:4px; }
+  .sec-sub { font-size:14px; color:var(--muted); font-weight:600; margin-bottom:16px; }
+  .quiz-q { font-size:18px; font-weight:800; margin-bottom:12px; }
+  .quiz-opts { display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+  .qopt { padding:15px 18px; border-radius:13px; border:3px solid #E2E8F0; background:white; font-family:inherit; font-size:17px; font-weight:700; cursor:pointer; text-align:left; transition:all 0.15s; }
+  .qopt:active { transform:scale(0.98); }
+  .qopt.correct { background:#E8F5E9; border-color:var(--green); color:var(--green-dark); }
+  .qopt.wrong { background:#FFEBEE; border-color:var(--red); color:var(--red); }
+  .qopt.disabled { cursor:default; }
+  .quiz-fb { font-size:17px; font-weight:800; min-height:24px; margin-bottom:12px; }
+  .quiz-fb.good { color:var(--green); }
+  .quiz-fb.bad { color:var(--red); }
+
+  .chk-item { display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:13px; border:3px solid #E2E8F0; margin-bottom:10px; cursor:pointer; transition:all 0.2s; font-size:17px; font-weight:700; background:white; }
+  .chk-item.checked { border-color:var(--green); background:#E8F5E9; }
+  .chk-box { width:30px; height:30px; border-radius:8px; border:3px solid #CBD5E1; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; transition:all 0.2s; background:white; }
+  .chk-item.checked .chk-box { background:var(--green); border-color:var(--green); color:white; }
+
+  .sig-wrap { margin-top:18px; }
+  .sig-lbl { font-size:13px; font-weight:800; margin-bottom:8px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .sig-cw { border:3px solid #E2E8F0; border-radius:14px; overflow:hidden; background:#FAFAFA; position:relative; }
+  canvas { display:block; touch-action:none; }
+  .sig-hint { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#CBD5E1; font-size:16px; font-weight:700; pointer-events:none; transition:opacity 0.3s; text-align:center; }
+  .sig-clear { margin-top:8px; background:none; border:2px solid #E2E8F0; border-radius:10px; padding:7px 14px; font-family:inherit; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer; }
+
+  .finish-btn { width:100%; margin-top:20px; padding:18px; border:none; border-radius:16px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; transition:transform 0.15s,opacity 0.2s; color:white; box-shadow:0 6px 18px rgba(0,0,0,0.15); }
+  .finish-btn:disabled { opacity:0.35; cursor:not-allowed; }
+  .finish-btn:not(:disabled):active { transform:scale(0.97); }
+
+  /* CELEBRATE */
+  #celebrate { background:linear-gradient(160deg,#1B5E20 0%,#2E7D32 55%,#43A047 100%); align-items:center; justify-content:center; text-align:center; padding:40px 24px; }
+  .cel-icon { font-size:96px; animation:bounce 0.6s ease infinite alternate; }
+  @keyframes bounce { from{transform:scale(1)} to{transform:scale(1.15)} }
+  .cel-stars { font-size:34px; margin:10px 0; }
+  .cel-title { font-size:44px; font-weight:900; color:var(--gold); margin-bottom:8px; text-shadow:0 4px 12px rgba(0,0,0,0.3); }
+  .cel-name { font-size:26px; color:white; font-weight:900; margin-bottom:10px; }
+  .cel-msg { font-size:19px; color:rgba(255,255,255,0.9); font-weight:600; margin-bottom:32px; line-height:1.6; white-space:pre-line; }
+  .cel-btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:16px; padding:16px 36px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; box-shadow:0 6px 24px rgba(249,168,37,0.4); transition:transform 0.15s; }
+  .cel-btn:active { transform:scale(0.96); }
+
+  .toast { position:fixed; top:16px; right:16px; background:#1B5E20; color:white; padding:10px 18px; border-radius:12px; font-size:14px; font-weight:800; z-index:999; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+  .toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ Progress Saved!</div>
+
+<!-- WORD POPUP (tap a word to see syllables + sound-it-out + hear it) -->
+<div class="wpop" id="wpop">
+  <div class="wpop-card" id="wpopCard">
+    <div class="wpop-word" id="wpWord"></div>
+    <div class="wpop-syl" id="wpSyl"></div>
+    <div class="wpop-say" id="wpSay"></div>
+    <div class="wpop-mean" id="wpMean"></div>
+    <button class="wpop-spk" id="wpSpk">🔊 Hear it</button>
+    <div class="wpop-close">tap anywhere to close</div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="home-icon">🗝️</div>
+  <h1 class="home-title">Trent's Reading<br>Adventure</h1>
+  <p class="home-sub">Book 8 • The Cave Under the Isle • 10 Days</p>
+  <div class="home-card">
+    <label class="name-label">What is your name?</label>
+    <input class="name-input" id="nameInput" type="text" placeholder="Type your name..." maxlength="30" autocomplete="off">
+  </div>
+  <button class="start-btn" onclick="startApp()">Let's Go! 🗝️</button>
+  <a class="menu-link" href="index.html">🏠 Back to Menu</a>
+</div>
+
+<!-- MAP -->
+<div id="map" class="screen">
+  <div class="map-header">
+    <div class="map-header-top">
+      <div class="map-avatar">🗝️</div>
+      <div class="map-hd">
+        <h2 id="mapName">Reading Adventure</h2>
+        <p id="mapProg">0 of 10 days done</p>
+      </div>
+      <a class="home-btn" href="index.html" title="Menu">🏠</a>
+    </div>
+    <div class="prog-wrap"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+  <div class="map-scroll">
+    <div class="map-title">Choose Today's Story 🌳</div>
+    <div id="dayList"></div>
+  </div>
+</div>
+
+<!-- STORY -->
+<div id="story" class="screen">
+  <div class="story-hdr">
+    <button class="back-btn" onclick="showMap()">←</button>
+    <div class="shdr-info">
+      <div class="s-day-tag" id="sDayTag"></div>
+      <div class="s-title" id="sTitle"></div>
+    </div>
+    <div class="s-emoji" id="sEmoji"></div>
+  </div>
+  <div class="story-body" id="storyBody"></div>
+</div>
+
+<!-- CELEBRATE -->
+<div id="celebrate" class="screen">
+  <div class="cel-icon">🏆</div>
+  <div class="cel-stars">⭐ ⭐ ⭐</div>
+  <div class="cel-title">You Did It!</div>
+  <div class="cel-name" id="celName"></div>
+  <div class="cel-msg" id="celMsg"></div>
+  <button class="cel-btn" onclick="showMap()">Back to My Days 🗺️</button>
+</div>
+
+<script>
+const STORIES = [
+  {"day":1,"title":"Groans in the Ground","emoji":"🌳","color":"#2E7D32","bg":"#E8F5E9","keyWords":["trees","ground","night","roots","Kai"],"lines":["The isle grew green so fast.","In a month, the trees were grown.","Kids played in the shade of trees.","Mae was glad, day and night.","But one night, Kai woke up.","The ground shook, and roots creaked.","He heard a low groan.","It came up from the ground.","Kai ran out into the night.","The trees swayed, though no wind blew.","Johnny stood by the biggest tree.","\"Do you hear that?\" asked Kai.","\"It is the roots,\" said Johnny.","\"The roots are old, and awake.\"","Johnny put his hand on the ground.","\"Something is under this isle.\""],"quiz":{"q":"What came up from the ground?","opts":["A song","A groan","A whale","A bell"],"ans":1},"sameSound":[{"w":"grown","means":"got big, as a plant does","example":"The tree has grown tall."},{"w":"groan","means":"a low sound of pain","example":"I heard a groan."}]},
+  {"day":2,"title":"Stairs in the Rock","emoji":"🪨","color":"#6D4C41","bg":"#EFEBE9","keyWords":["rock","door","roots","lamp","dark"],"lines":["At dawn, Kai dug near the roots.","They dug where the groan began.","Under the roots, they found a rock.","It was not a plain rock.","It had a small round door.","Kai pushed, and the door opened.","Behind it was a dark stair.","The stair went down, down, down.","Kai could only stare.","\"It is so dark,\" whispered Kai.","Johnny lit a lamp.","The lamp lit the wet rock.","Roots hung from the dark roof.","\"Keep the lamp close,\" said Johnny.","They went down, step by step.","Behind them, the door stayed open."],"quiz":{"q":"What did they find under the roots?","opts":["A ship","A round door","A whale","A map"],"ans":1},"sameSound":[{"w":"stair","means":"a step in a way up","example":"I sat on a stair."},{"w":"stare","means":"to look hard at it","example":"Do not stare at me."}]},
+  {"day":3,"title":"The Stone Knight","emoji":"🗿","color":"#546E7A","bg":"#ECEFF1","keyWords":["stone","lamp","cave","carved","hand"],"lines":["The stair ended in a big cave.","The cave was cold and still.","Johnny raised the lamp.","Light fell on a stone man.","He was a knight in stone armor.","He stood guard by the cave wall.","In his stone hand was a seed.","Words were carved on his shield.","Kai could not read the words.","\"Is he real?\" whispered Kai.","Johnny put a hand on the stone.","\"He has stood here night after night.\"","Kai held the lamp in his hand.","More words were carved on the floor.","The lamp flickered on the walls.","Johnny touched the carved cave wall."],"quiz":{"q":"What was in the stone hand of the knight?","opts":["A sword","A key","A seed","A bell"],"ans":2},"sameSound":[{"w":"night","means":"the dark time, not day","example":"Stars shine at night."},{"w":"knight","means":"a brave man in armor","example":"The knight rode a horse."}]},
+  {"day":4,"title":"The Maze","emoji":"🌀","color":"#6A1B9A","bg":"#F3E5F5","keyWords":["tunnels","chalk","lost","turn","Kai"],"lines":["Behind the knight, the tunnels split.","\"It is a maze,\" said Johnny.","Kai took a piece of chalk.","He marked each turn with chalk.","The tunnels went left, then right.","The tunnels all looked the same.","Soon Kai felt lost.","\"I am lost, Johnny,\" he said.","Then Johnny smelled something sweet.","\"That smells like maize,\" he said.","They followed the smell at each turn.","One last turn led to a room.","Piles of old maize sat in jars.","\"People lived here long ago.\"","Kai felt proud, and not so lost.","The chalk showed the way back."],"quiz":{"q":"What did Kai mark the turns with?","opts":["Mud","Seeds","Chalk","Rope"],"ans":2},"sameSound":[{"w":"maze","means":"a place where you get lost","example":"We ran in the maze."},{"w":"maize","means":"a tall plant with corn","example":"The farm has maize."}]},
+  {"day":5,"title":"Follow the Glow","emoji":"🌿","color":"#00796B","bg":"#E0F2F1","keyWords":["glow","roots","path","lamp","Kai"],"lines":["The lamp ran low on oil.","\"Save the lamp,\" said Johnny.","Then Kai saw a soft glow.","Roots crept along the cave floor.","The roots gave off a green glow.","One root was brighter than the rest.","Kai bent down to touch it.","\"It is a path,\" he said.","\"The root shows us the route.\"","They put out the lamp.","They walked by the glow.","The roots curled left, then right.","The path went down and down.","Kai felt the root hum.","The path led to a huge cave.","A great shape stood in the glow."],"quiz":{"q":"What showed them the way?","opts":["A map","A green glow","A whale","A bell"],"ans":1},"sameSound":[{"w":"root","means":"the part of a plant below","example":"The root is in dirt."},{"w":"route","means":"the way you go to get there","example":"We took the long route."}]},
+  {"day":6,"title":"The Water Rises","emoji":"🌊","color":"#1565C0","bg":"#E3F2FD","keyWords":["water","tide","wet","cold","Kai"],"lines":["The cave floor was wet.","Their clothes were wet and cold.","Water crept in from a crack.","\"It is the tide,\" said Johnny.","\"The tide fills the low tunnel.\"","The water rose to their knees.","Kai felt weak and scared.","The glow of the roots was weak.","\"How long till the tide goes out?\"","\"About half a day,\" said Johnny.","\"We told Mae, back in a week.\"","\"The water will go back down.\"","They climbed up on a cold ledge.","They sat close, wet and cold.","Johnny shared his last bread with Kai.","\"We will make it,\" said Kai."],"quiz":{"q":"What filled the low tunnel?","opts":["Sand","Water","Smoke","Mud"],"ans":1},"sameSound":[{"w":"weak","means":"not strong or bright","example":"The light is weak."},{"w":"week","means":"seven days in a row","example":"We stay one week."}]},
+  {"day":7,"title":"Through the Crack","emoji":"🧗","color":"#E65100","bg":"#FFF3E0","keyWords":["rope","crack","climb","high","Kai"],"lines":["At last, the water went down.","\"Now we climb,\" said Johnny.","A crack ran up the cave wall.","Light came through the crack.","\"We can climb out!\" cried Kai.","But the crack was high.","Kai threw the rope up.","It caught on a root, high up.","Kai began to climb.","He climbed high, hand over hand.","He squeezed through the crack.","Then he threw the rope down.","Johnny tied the rope round his waist.","Kai pulled with all his might.","Up came Johnny, through the crack.","They sat in the sun, safe."],"quiz":{"q":"What did Kai throw up the wall?","opts":["A map","A lamp","A bag","A rope"],"ans":3},"sameSound":[{"w":"threw","means":"sent it through the air","example":"I threw the ball."},{"w":"through","means":"in one side and out","example":"We ran through the door."}]},
+  {"day":8,"title":"The Great Stump","emoji":"🪵","color":"#5D4037","bg":"#EFEBE9","keyWords":["stump","roots","huge","wide","Kai"],"lines":["Back in the cave, they found more.","The huge cave opened wide.","In the middle sat a great stump.","It was wide as ten houses.","The stump was gray and old.","Huge roots ran out from the stump.","Roots spread wide across the floor.","\"A tree stood here,\" said Kai.","\"It was huge,\" Kai said.","Johnny put his hand on the stump.","The wood was warm, not dead.","\"It would be a hundred years old.\"","\"Is it still alive?\" asked Kai.","A soft light pulsed in the roots.","Words were carved round the stump.","\"This is the Mother Tree,\" said Johnny."],"quiz":{"q":"What sat in the middle of the cave?","opts":["A ship","A great stump","A king","A well"],"ans":1},"sameSound":[{"w":"wood","means":"what a tree is made of","example":"The box is made of wood."},{"w":"would","means":"a word for what might be","example":"I would help you."}]},
+  {"day":9,"title":"Kai Reads Aloud","emoji":"📜","color":"#283593","bg":"#E8EAF6","keyWords":["words","read","Kai","stump","slow"],"lines":["Kai looked at the words.","The words seemed to swim.","\"I cannot read this,\" he said.","Johnny sat by Kai.","\"Go slow,\" said Johnny.","\"Take one small chunk at a time.\"","Kai put his finger on the stump.","He sounded out the first word.","\"Mother Tree!\" Kai read slow.","He read the words, slow and sure.","He said the words aloud.","\"No one is allowed to cut me.\"","\"I wait for a friend to read.\"","The stump began to hum.","A green glow rose from the stump.","Kai had read the words!"],"quiz":{"q":"How did Kai read the hard words?","opts":["One chunk at a time","He did not","He asked Mae","He ran away"],"ans":0},"sameSound":[{"w":"aloud","means":"in a voice that we hear","example":"Read the page aloud."},{"w":"allowed","means":"let by the rules","example":"We are allowed to go."}]},
+  {"day":10,"title":"Trent's Twist","emoji":"⭐","color":"#8A6D00","bg":"#FFFDE7","keyWords":["Trent","Kai","made","Tree","read"],"lines":["The Mother Tree woke at last.","Green leaves burst from the old stump.","A pear fell in front of Kai.","\"Thank you, Kai,\" said the Tree.","A pair of small pears hung there.","\"This was your twist, Trent.\"","You made Kai read the words.","You made the Tree wake up.","You made a hard task feel small.","Hard words can be read slow.","Only Trent could write that twist.","But the Tree had bad news.","\"Ships with axes are coming.\"","Trent, you left a storm to come.","You read ten more days, Trent.","Be proud, Trent, for you did this."],"quiz":{"q":"Who woke the Mother Tree?","opts":["Mae","Johnny","The whale","Kai"],"ans":3},"sameSound":[{"w":"pair","means":"two things that go as one","example":"I lost a pair of socks."},{"w":"pear","means":"a sweet fruit from a tree","example":"I ate a ripe pear."}]}
+];
+
+/* ---------------------------------------------------------------------------
+   PRONUNCIATION DICTIONARY
+   Every word that appears in the 10 stories is hand-listed here so the
+   syllable break + sound-it-out never depends on a guessing algorithm.
+   Format:  "word": [ "syl · la · bles", "SOUND-it-out" ]
+   - syllables use " · " between chunks (single-syllable words have no dots)
+   - the CAPS chunk in sound-it-out is the part you say loudest (the stress)
+   To add a new 10-unit series: add that series' new words here the same way.
+   Any word NOT listed still works — it falls back to an automatic syllable
+   split and is still read aloud by the phone's voice.
+--------------------------------------------------------------------------- */
+const PRON = {
+  // Book 8 (The Cave Under the Isle) additions
+  "ago":["a · go","uh-GOH"],
+  "allowed":["al · lowed","uh-LOWD"],
+  "along":["a · long","uh-LONG"],
+  "aloud":["a · loud","uh-LOWD"],
+  "armor":["ar · mor","AR-mur"],
+  "awake":["a · wake","uh-WAYK"],
+  "axes":["ax · es","AK-siz"],
+  "ball":["ball","BAWL"],
+  "biggest":["big · gest","BIG-ist"],
+  "box":["box","BOKS"],
+  "bread":["bread","BRED"],
+  "brighter":["bright · er","BRY-tur"],
+  "burst":["burst","BURST"],
+  "cannot":["can · not","KAN-ot"],
+  "carved":["carved","KARVD"],
+  "caught":["caught","KAWT"],
+  "chalk":["chalk","CHAWK"],
+  "chunk":["chunk","CHUNK"],
+  "climb":["climb","KLYM"],
+  "clothes":["clothes","KLOHZ"],
+  "corn":["corn","KORN"],
+  "creaked":["creaked","KREEKT"],
+  "crept":["crept","KREPT"],
+  "curled":["curled","KURLD"],
+  "dawn":["dawn","DAWN"],
+  "dead":["dead","DED"],
+  "farm":["farm","FARM"],
+  "fills":["fills","FILZ"],
+  "finger":["fin · ger","FING-gur"],
+  "flickered":["flick · ered","FLIK-urd"],
+  "followed":["fol · lowed","FOL-ohd"],
+  "front":["front","FRUNT"],
+  "fruit":["fruit","FROOT"],
+  "glow":["glow","GLOH"],
+  "goes":["goes","GOHZ"],
+  "groan":["groan","GROHN"],
+  "guard":["guard","GARD"],
+  "half":["half","HAF"],
+  "houses":["hous · es","HOW-ziz"],
+  "huge":["huge","HYOOJ"],
+  "hum":["hum","HUM"],
+  "hung":["hung","HUNG"],
+  "isle":["isle","EYEL"],
+  "jars":["jars","JARZ"],
+  "kai":["Kai","KY"],
+  "knees":["knees","NEEZ"],
+  "knight":["knight","NYT"],
+  "lamp":["lamp","LAMP"],
+  "ledge":["ledge","LEJ"],
+  "lived":["lived","LIVD"],
+  "mae":["Mae","MAY"],
+  "maize":["maize","MAYZ"],
+  "make":["make","MAYK"],
+  "marked":["marked","MARKT"],
+  "maze":["maze","MAYZ"],
+  "middle":["mid · dle","MID-uhl"],
+  "might":["might","MYT"],
+  "month":["month","MUNTH"],
+  "mother":["moth · er","MUTH-ur"],
+  "near":["near","NEER"],
+  "news":["news","NOOZ"],
+  "oil":["oil","OYL"],
+  "opened":["o · pened","OH-pund"],
+  "page":["page","PAYJ"],
+  "pain":["pain","PAYN"],
+  "pair":["pair","PAIR"],
+  "pear":["pear","PAIR"],
+  "pears":["pears","PAIRZ"],
+  "piece":["piece","PEES"],
+  "piles":["piles","PYLZ"],
+  "plain":["plain","PLAYN"],
+  "played":["played","PLAYD"],
+  "pulsed":["pulsed","PULST"],
+  "raised":["raised","RAYZD"],
+  "ripe":["ripe","RYP"],
+  "room":["room","ROOM"],
+  "root":["root","ROOT"],
+  "route":["route","ROOT"],
+  "row":["row","ROH"],
+  "rules":["rules","ROOLZ"],
+  "seemed":["seemed","SEEMD"],
+  "seven":["sev · en","SEV-un"],
+  "shape":["shape","SHAYP"],
+  "shared":["shared","SHAIRD"],
+  "shield":["shield","SHEELD"],
+  "shine":["shine","SHYN"],
+  "ships":["ships","SHIPS"],
+  "showed":["showed","SHOHD"],
+  "shows":["shows","SHOHZ"],
+  "smell":["smell","SMEL"],
+  "smelled":["smelled","SMELD"],
+  "smells":["smells","SMELZ"],
+  "socks":["socks","SOKS"],
+  "something":["some · thing","SUM-thing"],
+  "sounded":["sound · ed","SOWN-did"],
+  "split":["split","SPLIT"],
+  "spread":["spread","SPRED"],
+  "squeezed":["squeezed","SKWEEZD"],
+  "stair":["stair","STAIR"],
+  "stare":["stare","STAIR"],
+  "stay":["stay","STAY"],
+  "stayed":["stayed","STAYD"],
+  "stump":["stump","STUMP"],
+  "sure":["sure","SHUUR"],
+  "swayed":["swayed","SWAYD"],
+  "swim":["swim","SWIM"],
+  "task":["task","TASK"],
+  "though":["though","THOH"],
+  "threw":["threw","THROO"],
+  "tide":["tide","TYD"],
+  "touch":["touch","TUCH"],
+  "touched":["touched","TUCHT"],
+  "tunnel":["tun · nel","TUN-uhl"],
+  "tunnels":["tun · nels","TUN-uhlz"],
+  "voice":["voice","VOYS"],
+  "waist":["waist","WAYST"],
+  "wake":["wake","WAYK"],
+  "walls":["walls","WAWLZ"],
+  "weak":["weak","WEEK"],
+  "week":["week","WEEK"],
+  "whispered":["whis · pered","WIS-purd"],
+  // Book 6 (The Sprout and the Sea) additions
+  "across":["a · cross","uh-KRAWS"],
+  "after":["af · ter","AF-tur"],
+  "air":["air","AIR"],
+  "also":["al · so","AWL-soh"],
+  "behind":["be · hind","bee-HYND"],
+  "below":["be · low","bee-LOH"],
+  "blew":["blew","BLOO"],
+  "blows":["blows","BLOHZ"],
+  "blue":["blue","BLOO"],
+  "boat":["boat","BOHT"],
+  "boy":["boy","BOY"],
+  "brave":["brave","BRAYV"],
+  "bridge":["bridge","BRIJ"],
+  "brings":["brings","BRINGZ"],
+  "broken":["bro · ken","BROH-kun"],
+  "brought":["brought","BRAWT"],
+  "bye":["bye","BY"],
+  "camp":["camp","KAMP"],
+  "cart":["cart","KART"],
+  "carts":["carts","KARTS"],
+  "clear":["clear","KLEER"],
+  "cleared":["cleared","KLEERD"],
+  "cloud":["cloud","KLOWD"],
+  "color":["col · or","KUL-ur"],
+  "cracked":["cracked","KRAKT"],
+  "creek":["creek","KREEK"],
+  "cried":["cried","KRYD"],
+  "cross":["cross","KRAWS"],
+  "crossed":["crossed","KRAWST"],
+  "dog":["dog","DAWG"],
+  "drank":["drank","DRANK"],
+  "drew":["drew","DROO"],
+  "drink":["drink","DRINGK"],
+  "dry":["dry","DRY"],
+  "dust":["dust","DUST"],
+  "ears":["ears","EERZ"],
+  "east":["east","EEST"],
+  "ended":["end · ed","EN-did"],
+  "fed":["fed","FED"],
+  "fence":["fence","FENS"],
+  "fields":["fields","FEELDZ"],
+  "filled":["filled","FILD"],
+  "goat":["goat","GOHT"],
+  "goats":["goats","GOHTS"],
+  "her":["her","HUR"],
+  "horse":["horse","HORS"],
+  "hot":["hot","HOT"],
+  "leaned":["leaned","LEEND"],
+  "led":["led","LED"],
+  "lips":["lips","LIPS"],
+  "lit":["lit","LIT"],
+  "look":["look","LUUK"],
+  "map":["map","MAP"],
+  "me":["me","MEE"],
+  "men":["men","MEN"],
+  "noon":["noon","NOON"],
+  "number":["num · ber","NUM-bur"],
+  "our":["our","OWR"],
+  "paper":["pa · per","PAY-pur"],
+  "path":["path","PATH"],
+  "pay":["pay","PAY"],
+  "place":["place","PLAYS"],
+  "pot":["pot","POT"],
+  "reach":["reach","REECH"],
+  "rock":["rock","ROK"],
+  "rode":["rode","ROHD"],
+  "rope":["rope","ROHP"],
+  "rose":["rose","ROHZ"],
+  "rough":["rough","RUF"],
+  "run":["run","RUN"],
+  "salt":["salt","SAWLT"],
+  "same":["same","SAYM"],
+  "sand":["sand","SAND"],
+  "sang":["sang","SANG"],
+  "see":["see","SEE"],
+  "she":["she","SHEE"],
+  "shone":["shone","SHOHN"],
+  "son":["son","SUN"],
+  "songs":["songs","SAWNGZ"],
+  "soon":["soon","SOON"],
+  "sprout":["sprout","SPROWT"],
+  "stream":["stream","STREEM"],
+  "tail":["tail","TAYL"],
+  "tale":["tale","TAYL"],
+  "thin":["thin","THIN"],
+  "tied":["tied","TYD"],
+  "till":["till","TIL"],
+  "toward":["to · ward","tuh-WORD"],
+  "turn":["turn","TURN"],
+  "wagged":["wagged","WAGD"],
+  "wags":["wags","WAGZ"],
+  "waves":["waves","WAYVZ"],
+  "wells":["wells","WELZ"],
+  "wood":["wood","WUUD"],
+  "word":["word","WURD"],
+  "words":["words","WURDZ"],
+  "write":["write","RYT"],
+  "year":["year","YEER"],
+  "young":["young","YUNG"],
+  // Book 5 (The Storm and the Roots) additions
+  "asleep":["a · sleep","uh-SLEEP"],
+  "banks":["banks","BANKS"],
+  "beds":["beds","BEDZ"],
+  "bent":["bent","BENT"],
+  "bigger":["big · ger","BIG-ur"],
+  "bit":["bit","BIT"],
+  "brown":["brown","BROWN"],
+  "calm":["calm","KAHM"],
+  "cave":["cave","KAYV"],
+  "coming":["com · ing","KUM-ing"],
+  "dad":["dad","DAD"],
+  "dads":["dads","DADZ"],
+  "feel":["feel","FEEL"],
+  "gold":["gold","GOHLD"],
+  "grass":["grass","GRASS"],
+  "great":["great","GRAYT"],
+  "high":["high","HY"],
+  "holds":["holds","HOHLDZ"],
+  "hundred":["hun · dred","HUN-drid"],
+  "if":["if","IF"],
+  "loud":["loud","LOWD"],
+  "mom":["mom","MOM"],
+  "moms":["moms","MOMZ"],
+  "morning":["mor · ning","MOR-ning"],
+  "most":["most","MOHST"],
+  "mud":["mud","MUD"],
+  "muddy":["mud · dy","MUD-ee"],
+  "need":["need","NEED"],
+  "rain":["rain","RAYN"],
+  "river":["riv · er","RIV-ur"],
+  "rocks":["rocks","ROKS"],
+  "roofs":["roofs","ROOFS"],
+  "save":["save","SAYV"],
+  "saved":["saved","SAYVD"],
+  "seen":["seen","SEEN"],
+  "sky":["sky","SKY"],
+  "slid":["slid","SLID"],
+  "slide":["slide","SLYD"],
+  "slowed":["slowed","SLOHD"],
+  "spoke":["spoke","SPOHK"],
+  "stopped":["stopped","STOPT"],
+  "storm":["storm","STORM"],
+  "than":["than","THAN"],
+  "these":["these","THEEZ"],
+  "those":["those","THOHZ"],
+  "tight":["tight","TYT"],
+  "we":["we","WEE"],
+  "wet":["wet","WET"],
+  "will":["will","WIL"],
+  "a":["a","uh"], "about":["a · bout","uh-BOWT"], "again":["a · gain","uh-GEN"],
+  "ahead":["a · head","uh-HED"], "alive":["a · live","uh-LYV"], "all":["all","AWL"],
+  "alone":["a · lone","uh-LOHN"], "always":["al · ways","AWL-wayz"], "am":["am","AM"],
+  "an":["an","AN"], "and":["and","AND"], "another":["a · noth · er","uh-NUH-thur"],
+  "apple":["ap · ple","AP-uhl"], "apples":["ap · ples","AP-uhlz"], "appleseed":["Ap · ple · seed","AP-uhl-seed"],
+  "are":["are","AR"], "as":["as","AZ"], "asked":["asked","ASKT"],
+  "at":["at","AT"], "ate":["ate","AYT"], "away":["a · way","uh-WAY"],
+  "back":["back","BAK"], "bad":["bad","BAD"], "bag":["bag","BAG"],
+  "be":["be","BEE"], "began":["be · gan","bee-GAN"], "begun":["be · gun","bee-GUN"],
+  "belonged":["be · longed","bee-LONGD"], "best":["best","BEST"], "big":["big","BIG"],
+  "birds":["birds","BURDZ"], "blink":["blink","BLINGK"], "bold":["bold","BOHLD"],
+  "both":["both","BOHTH"], "break":["break","BRAYK"], "bright":["bright","BRYT"],
+  "broke":["broke","BROHK"], "but":["but","BUT"], "buy":["buy","BY"],
+  "by":["by","BY"], "call":["call","KAWL"], "came":["came","KAYM"],
+  "can":["can","KAN"], "cars":["cars","KARZ"], "cell":["cell","SEL"],
+  "climbed":["climbed","KLYMD"], "close":["close","KLOHS"], "coat":["coat","KOHT"],
+  "cold":["cold","KOHLD"], "come":["come","KUM"], "cool":["cool","KOOL"],
+  "could":["could","KUUD"], "cover":["cov · er","KUH-vur"], "covered":["cov · ered","KUH-vurd"],
+  "crack":["crack","KRAK"], "cry":["cry","KRY"], "cut":["cut","KUT"],
+  "dark":["dark","DARK"], "day":["day","DAY"], "days":["days","DAYZ"],
+  "deep":["deep","DEEP"], "did":["did","DID"], "dig":["dig","DIG"],
+  "dirt":["dirt","DURT"], "do":["do","DOO"], "does":["does","DUZ"],
+  "door":["door","DOR"], "doors":["doors","DORZ"], "down":["down","DOWN"],
+  "dug":["dug","DUG"], "each":["each","EECH"], "eat":["eat","EET"],
+  "else":["else","ELS"], "end":["end","END"], "enough":["e · nough","ee-NUF"],
+  "every":["ev · ery","EV-ree"], "everyone":["ev · ery · one","EV-ree-wun"], "eyes":["eyes","EYEZ"],
+  "far":["far","FAR"], "farms":["farms","FARMZ"], "fast":["fast","FAST"],
+  "feet":["feet","FEET"], "fell":["fell","FEL"], "felt":["felt","FELT"],
+  "field":["field","FEELD"], "find":["find","FYND"], "fire":["fire","FYR"],
+  "first":["first","FURST"], "five":["five","FYV"], "flat":["flat","FLAT"],
+  "floor":["floor","FLOR"], "for":["for","FOR"], "forest":["for · est","FOR-est"],
+  "found":["found","FOWND"], "four":["four","FOR"], "free":["free","FREE"],
+  "friend":["friend","FREND"], "friends":["friends","FRENDZ"], "from":["from","FRUM"],
+  "full":["full","FUL"], "fun":["fun","FUN"], "funny":["fun · ny","FUN-ee"],
+  "gave":["gave","GAYV"], "get":["get","GET"], "give":["give","GIV"],
+  "glad":["glad","GLAD"], "go":["go","GOH"], "going":["go · ing","GOH-ing"],
+  "gone":["gone","GAWN"], "good":["good","GUUD"], "got":["got","GOT"],
+  "gray":["gray","GRAY"], "green":["green","GREEN"], "grew":["grew","GROO"],
+  "ground":["ground","GROWND"], "grow":["grow","GROH"], "growing":["grow · ing","GROH-ing"],
+  "grown":["grown","GROHN"], "had":["had","HAD"], "hair":["hair","HAIR"],
+  "hall":["hall","HAWL"], "hand":["hand","HAND"], "hands":["hands","HANDZ"],
+  "happy":["hap · py","HAP-ee"], "hard":["hard","HARD"], "has":["has","HAZ"],
+  "hat":["hat","HAT"], "have":["have","HAV"], "he":["he","HEE"],
+  "head":["head","HED"], "hear":["hear","HEER"], "heard":["heard","HURD"],
+  "heart":["heart","HART"], "heat":["heat","HEET"], "held":["held","HELD"],
+  "help":["help","HELP"], "helps":["helps","HELPS"], "here":["here","HEER"],
+  "hi":["hi","HY"], "hid":["hid","HID"], "hill":["hill","HIL"],
+  "him":["him","HIM"], "his":["his","HIZ"], "hit":["hit","HIT"],
+  "hold":["hold","HOHLD"], "hole":["hole","HOHL"], "home":["home","HOHM"],
+  "homes":["homes","HOHMZ"], "hope":["hope","HOHP"], "house":["house","HOWS"],
+  "how":["how","HOW"], "human":["hu · man","HYOO-mun"], "hungry":["hun · gry","HUNG-gree"],
+  "hurt":["hurt","HURT"], "i":["I","EYE"], "in":["in","IN"],
+  "into":["in · to","IN-too"], "is":["is","IZ"], "it":["it","IT"],
+  "its":["its","ITS"], "jail":["jail","JAYL"], "job":["job","JOB"],
+  "johnny":["John · ny","JON-ee"], "joke":["joke","JOHK"], "jokes":["jokes","JOHKS"],
+  "just":["just","JUST"], "keep":["keep","KEEP"], "kept":["kept","KEPT"],
+  "kid":["kid","KID"], "kids":["kids","KIDZ"], "kind":["kind","KYND"],
+  "knee":["knee","NEE"], "knew":["knew","NOO"], "know":["know","NOH"],
+  "knows":["knows","NOHZ"], "land":["land","LAND"], "last":["last","LAST"],
+  "laugh":["laugh","LAF"], "law":["law","LAW"], "leaf":["leaf","LEEF"],
+  "lean":["lean","LEEN"], "learn":["learn","LURN"], "learns":["learns","LURNZ"],
+  "leaves":["leaves","LEEVZ"], "left":["left","LEFT"], "let":["let","LET"],
+  "life":["life","LYF"], "light":["light","LYT"], "like":["like","LYK"],
+  "liked":["liked","LYKT"], "little":["lit · tle","LIT-uhl"], "live":["live","LIV"],
+  "lock":["lock","LOK"], "long":["long","LONG"], "looked":["looked","LUUKT"],
+  "lose":["lose","LOOZ"], "lost":["lost","LAWST"], "lot":["lot","LOT"],
+  "lots":["lots","LOTS"], "love":["love","LUV"], "loved":["loved","LUVD"],
+  "low":["low","LOH"], "mad":["mad","MAD"], "made":["made","MAYD"],
+  "main":["main","MAYN"], "man":["man","MAN"], "many":["man · y","MEN-ee"],
+  "mess":["mess","MES"], "missed":["missed","MIST"], "more":["more","MOR"],
+  "move":["move","MOOV"], "moved":["moved","MOOVD"], "must":["must","MUST"],
+  "my":["my","MY"], "name":["name","NAYM"], "names":["names","NAYMZ"],
+  "needed":["need · ed","NEE-did"], "new":["new","NOO"], "next":["next","NEKST"],
+  "night":["night","NYT"], "no":["no","NOH"], "not":["not","NOT"],
+  "nothing":["noth · ing","NUTH-ing"], "now":["now","NOW"], "of":["of","UV"],
+  "off":["off","AWF"], "old":["old","OHLD"], "on":["on","ON"],
+  "once":["once","WUNS"], "one":["one","WUN"], "ones":["ones","WUNZ"],
+  "only":["on · ly","OHN-lee"], "open":["o · pen","OH-pun"], "or":["or","OR"],
+  "other":["oth · er","UH-thur"], "out":["out","OWT"], "over":["o · ver","OH-vur"],
+  "own":["own","OHN"], "paid":["paid","PAYD"], "park":["park","PARK"],
+  "part":["part","PART"], "past":["past","PAST"], "people":["peo · ple","PEE-puhl"],
+  "pick":["pick","PIK"], "picked":["picked","PIKT"], "plan":["plan","PLAN"],
+  "plant":["plant","PLANT"], "planted":["plant · ed","PLAN-tid"], "play":["play","PLAY"],
+  "please":["please","PLEEZ"], "proud":["proud","PROWD"], "pulled":["pulled","PUULD"],
+  "pushed":["pushed","PUUSHT"], "put":["put","PUUT"], "quiet":["qui · et","KWY-ut"],
+  "race":["race","RAYS"], "ran":["ran","RAN"], "read":["read","REED"],
+  "real":["re · al","REE-uhl"], "red":["red","RED"], "rest":["rest","REST"],
+  "right":["right","RYT"], "road":["road","ROHD"], "roof":["roof","ROOF"],
+  "roots":["roots","ROOTS"], "round":["round","ROWND"], "sad":["sad","SAD"],
+  "safe":["safe","SAYF"], "said":["said","SED"], "sat":["sat","SAT"],
+  "saw":["saw","SAW"], "say":["say","SAY"], "says":["says","SEZ"],
+  "scared":["scared","SKAIRD"], "school":["school","SKOOL"], "sea":["sea","SEE"],
+  "seed":["seed","SEED"], "seeds":["seeds","SEEDZ"], "sent":["sent","SENT"],
+  "set":["set","SET"], "shade":["shade","SHAYD"], "share":["share","SHAIR"],
+  "sheriff":["sher · iff","SHAIR-if"], "shook":["shook","SHUUK"], "shoot":["shoot","SHOOT"],
+  "shop":["shop","SHOP"], "shops":["shops","SHOPS"], "shut":["shut","SHUT"],
+  "side":["side","SYD"], "single":["sin · gle","SING-guhl"], "sit":["sit","SIT"],
+  "sleep":["sleep","SLEEP"], "slow":["slow","SLOH"], "small":["small","SMAWL"],
+  "smart":["smart","SMART"], "smile":["smile","SMYL"], "smiled":["smiled","SMYLD"],
+  "so":["so","SOH"], "soft":["soft","SOFT"], "soil":["soil","SOYL"],
+  "some":["some","SUM"], "sorry":["sor · ry","SOR-ee"], "sound":["sound","SOWND"],
+  "spot":["spot","SPOT"], "stars":["stars","STARZ"], "start":["start","START"],
+  "started":["start · ed","STAR-tid"], "starts":["starts","STARTS"], "step":["step","STEP"],
+  "still":["still","STIL"], "stone":["stone","STOHN"], "stood":["stood","STUUD"],
+  "stop":["stop","STOP"], "store":["store","STOR"], "stories":["sto · ries","STOR-eez"],
+  "story":["sto · ry","STOR-ee"], "strange":["strange","STRAYNJ"], "street":["street","STREET"],
+  "strong":["strong","STRAWNG"], "sun":["sun","SUN"], "supper":["sup · per","SUP-ur"],
+  "sweet":["sweet","SWEET"], "take":["take","TAYK"], "talk":["talk","TAWK"],
+  "tall":["tall","TAWL"], "taller":["tall · er","TAW-lur"], "teach":["teach","TEECH"],
+  "tell":["tell","TEL"], "ten":["ten","TEN"], "thank":["thank","THANK"],
+  "that":["that","THAT"], "the":["the","THUH"], "their":["their","THAIR"],
+  "them":["them","THEM"], "then":["then","THEN"], "there":["there","THAIR"],
+  "they":["they","THAY"], "thing":["thing","THING"], "things":["things","THINGZ"],
+  "think":["think","THINGK"], "this":["this","THIS"], "three":["three","THREE"],
+  "through":["through","THROO"], "time":["time","TYM"], "times":["times","TYMZ"],
+  "tired":["tired","TYRD"], "to":["to","TOO"], "told":["told","TOHLD"],
+  "tomorrow":["to · mor · row","tuh-MOR-oh"], "too":["too","TOO"], "took":["took","TUUK"],
+  "town":["town","TOWN"], "tree":["tree","TREE"], "trees":["trees","TREEZ"],
+  "trent":["Trent","TRENT"], "true":["true","TROO"], "truth":["truth","TROOTH"],
+  "twist":["twist","TWIST"], "two":["two","TOO"], "under":["un · der","UN-dur"],
+  "up":["up","UP"], "us":["us","US"], "very":["ver · y","VAIR-ee"],
+  "wait":["wait","WAYT"], "walk":["walk","WAWK"], "walked":["walked","WAWKT"],
+  "wall":["wall","WAWL"], "want":["want","WONT"], "wanted":["want · ed","WON-tid"],
+  "wants":["wants","WONTS"], "warm":["warm","WARM"], "was":["was","WUZ"],
+  "watch":["watch","WOCH"], "water":["wa · ter","WAW-tur"], "wave":["wave","WAYV"],
+  "way":["way","WAY"], "well":["well","WEL"], "went":["went","WENT"],
+  "were":["were","WUR"], "what":["what","WUT"], "when":["when","WEN"],
+  "where":["where","WAIR"], "who":["who","HOO"], "whole":["whole","HOHL"],
+  "why":["why","WY"], "wide":["wide","WYD"], "wild":["wild","WYLD"],
+  "wind":["wind","WIND"], "wish":["wish","WISH"], "with":["with","WITH"],
+  "woke":["woke","WOHK"], "won":["won","WUN"], "woods":["woods","WUUDZ"],
+  "work":["work","WURK"], "world":["world","WURLD"], "would":["would","WUUD"],
+  "wrong":["wrong","RAWNG"], "wrote":["wrote","ROHT"], "yard":["yard","YARD"],
+  "years":["years","YEERZ"], "yell":["yell","YEL"], "yes":["yes","YES"],
+  "yet":["yet","YET"], "you":["you","YOO"], "your":["your","YOR"],
+  "yours":["yours","YORZ"]
+};
+
+let userName="", completed=[], currentDay=null;
+let sigCanvas, sigCtx, drawing=false, hasSig=false;
+let checks=[false,false,false], quizDone=false, wwDone=false, wwToken=0;
+const KEY='trent_reading_cave_v1';
+
+/* ---------- SPEECH (phone's built-in voice, Web Speech API) ---------- */
+let ttsVoice=null;
+function pickVoice(){
+  if(!('speechSynthesis' in window)) return;
+  const vs=speechSynthesis.getVoices();
+  ttsVoice = vs.find(v=>/en[-_]US/i.test(v.lang)) || vs.find(v=>/^en/i.test(v.lang)) || vs[0] || null;
+}
+if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged=pickVoice; pickVoice(); }
+function speak(text){
+  if(!('speechSynthesis' in window) || !text) return;
+  try {
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.rate=0.85; u.pitch=1; u.lang='en-US';
+    if(ttsVoice) u.voice=ttsVoice;
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+
+/* ---------- WORD POPUP ---------- */
+function fallbackSyl(w){
+  const m = w.toLowerCase().match(/[^aeiouy]*[aeiouy]+(?:[^aeiouy](?=[^aeiouy]))?|[^aeiouy]+$/gi);
+  return (m && m.length) ? m.join(' · ') : w;
+}
+function soundInfo(w){
+  const s=STORIES[currentDay];
+  return ((s&&s.sameSound)||[]).find(x=>x.w.toLowerCase()===w.toLowerCase())||null;
+}
+function openWord(el){
+  const raw = el.getAttribute('data-w');
+  const p = PRON[raw.toLowerCase()];
+  document.getElementById('wpWord').textContent = raw;
+  document.getElementById('wpSyl').textContent = p ? p[0] : fallbackSyl(raw);
+  const sayEl=document.getElementById('wpSay');
+  if(p && p[1]){ sayEl.textContent='“'+p[1]+'”'; sayEl.style.display=''; }
+  else { sayEl.style.display='none'; }
+  const meanEl=document.getElementById('wpMean');
+  const sa = el.classList.contains('sa') ? soundInfo(raw) : null;
+  if(sa){ meanEl.textContent=sa.w.toLowerCase()+' = '+sa.means; meanEl.style.display='block'; }
+  else { meanEl.style.display='none'; }
+  document.getElementById('wpSpk').onclick=(e)=>{ e.stopPropagation(); speak(raw); };
+  document.getElementById('wpop').classList.add('show');
+  // no auto-play — Trent taps "🔊 Hear it" when he wants to hear it
+}
+function closeWord(){ document.getElementById('wpop').classList.remove('show'); }
+
+function saveProgress() {
+  try { localStorage.setItem(KEY, JSON.stringify({name:userName, completed})); showToast(); } catch(e){}
+}
+function loadProgress(name) {
+  try {
+    const d=JSON.parse(localStorage.getItem(KEY)||'{}');
+    if (d.name && d.name.toLowerCase()===name.toLowerCase()) return d.completed||[];
+  } catch(e){}
+  return [];
+}
+function showToast() {
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1800);
+}
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function startApp() {
+  const n=document.getElementById('nameInput').value.trim();
+  if(!n){document.getElementById('nameInput').focus();return;}
+  userName=n; completed=loadProgress(n); showMap();
+}
+function showMap() {
+  show('map');
+  document.getElementById('mapName').textContent=userName+"'s Adventure";
+  const done=completed.length;
+  document.getElementById('mapProg').textContent=done+" of 10 days done";
+  document.getElementById('progFill').style.width=(done*10)+"%";
+  const list=document.getElementById('dayList'); list.innerHTML='';
+  STORIES.forEach((s,i)=>{
+    const isDone=completed.includes(i);
+    const isCur=!isDone&&(i===0||completed.includes(i-1));
+    const isLocked=!isDone&&!isCur;
+    const c=document.createElement('div');
+    c.className='day-card'+(isDone?' done':'')+(isCur?' current':'')+(isLocked?' locked':'');
+    c.innerHTML=`<div class="day-num" style="background:${s.color}">${s.day}</div><div class="day-info"><h3>${s.title}</h3><p>Day ${s.day}</p></div><div class="day-emoji">${s.emoji}</div>`;
+    if(!isLocked) c.onclick=()=>openStory(i);
+    list.appendChild(c);
+  });
+}
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function renderLine(line,kws,sas) {
+  const kset=new Set(kws.map(k=>k.toLowerCase()));
+  const aset=new Set((sas||[]).map(k=>k.toLowerCase()));
+  return line.split(/([A-Za-z]+)/).map(tok=>{
+    if(/^[A-Za-z]+$/.test(tok)){
+      const cls='word'+(kset.has(tok.toLowerCase())?' hl':'')+(aset.has(tok.toLowerCase())?' sa':'');
+      return `<span class="${cls}" data-w="${tok}" onclick="openWord(this)">${tok}</span>`;
+    }
+    return esc(tok);
+  }).join('');
+}
+function openStory(idx) {
+  currentDay=idx; checks=[false,false,false]; quizDone=false; hasSig=false; wwDone=false; wwToken++;
+  const s=STORIES[idx];
+  document.getElementById('sDayTag').textContent='DAY '+s.day;
+  document.getElementById('sDayTag').style.color=s.color;
+  document.getElementById('sTitle').textContent=s.title;
+  document.getElementById('sEmoji').textContent=s.emoji;
+  const body=document.getElementById('storyBody'); body.innerHTML='';
+  if(!s.sameSound||!s.sameSound.length){ wwDone=true; startReading(idx); return; }
+
+  // before the story: "Same sound, different meaning" card
+  const card=document.createElement('div');
+  card.innerHTML=`<div class="sa-hd" style="color:${s.color}">Same sound, different meaning 🔵</div>`
+    +(idx===0?`<div class="sa-intro">These words sound the same. They mean different things.</div>`:`<div class="sa-intro">Meet today's sound-alike words.</div>`)
+    +s.sameSound.map(x=>`<div class="sa-word"><div class="sa-top"><div class="sa-big">${esc(x.w)}</div><button class="sa-spk" data-w="${esc(x.w)}" onclick="speak(this.dataset.w)">🔊 Hear it</button></div><div class="sa-means">${renderLine(x.means,[])}</div><div class="sa-ex">${renderLine(x.example,[])}</div></div>`).join('')
+    +`<button class="finish-btn" style="background:${s.color}" onclick="startReading(${idx})">Got it, let's read ➜</button>`;
+  body.appendChild(card);
+  show('story');
+}
+function startReading(idx) {
+  const s=STORIES[idx];
+  const body=document.getElementById('storyBody'); body.innerHTML='';
+
+  // key words
+  const kb=document.createElement('div'); kb.className='kw-box';
+  kb.style.cssText=`border-color:${s.color};background:${s.bg}`;
+  kb.innerHTML=`<div class="kw-lbl">Look for these words 👀</div><div class="kw-list">${s.keyWords.map(w=>`<span class="kw-chip" style="background:${s.color}">${w}</span>`).join('')}</div>`;
+  body.appendChild(kb);
+
+  // tap tip
+  const tip=document.createElement('div'); tip.className='tap-tip';
+  tip.textContent='👆 Tap any hard word to see it and sound it out.';
+  body.appendChild(tip);
+  if(s.sameSound&&s.sameSound.length){
+    const stip=document.createElement('div'); stip.className='sa-tip';
+    stip.textContent='🔵 A blue line marks a sound-alike word. Tap it!';
+    body.appendChild(stip);
+  }
+
+  // lines (tappable words only — no whole-line audio; Trent reads it himself)
+  s.lines.forEach(line=>{
+    const row=document.createElement('div'); row.className='s-line';
+    row.innerHTML=renderLine(line,s.keyWords,(s.sameSound||[]).map(x=>x.w));
+    body.appendChild(row);
+  });
+
+  // after the story, before the quiz: "Which is which?"
+  if(s.sameSound&&s.sameSound.length){
+    const wd=document.createElement('div'); wd.className='sec';
+    wd.innerHTML=`<div class="sec-title" style="color:${s.color}">Which is which? 🔵</div><div class="sec-sub">Tap the word that fits.</div><div id="wwBox"></div>`;
+    body.appendChild(wd);
+    renderWW(0);
+  }
+
+  // quiz
+  const qd=document.createElement('div'); qd.className='sec';
+  qd.innerHTML=`<div class="sec-title" style="color:${s.color}">Quick Check ✏️</div><div class="sec-sub">Tap the right answer</div><div class="quiz-q">${s.quiz.q}</div><div class="quiz-opts" id="qOpts">${s.quiz.opts.map((o,i)=>`<button class="qopt" onclick="answerQuiz(${i},${s.quiz.ans})">${o}</button>`).join('')}</div><div class="quiz-fb" id="qFb"></div>`;
+  body.appendChild(qd);
+
+  // signoff
+  const sd=document.createElement('div'); sd.className='sec';
+  sd.innerHTML=`<div class="sec-title" style="color:${s.color}">Sign Off ✍️</div><div style="height:6px"></div>${['I read every word','I found the key words','I am proud of myself'].map((l,i)=>`<div class="chk-item" id="chk${i}" onclick="toggleChk(${i})"><div class="chk-box" id="box${i}"></div><span>${l}</span></div>`).join('')}<div class="sig-wrap"><div class="sig-lbl">Sign your name</div><div class="sig-cw"><canvas id="sigCanvas" height="130"></canvas><div class="sig-hint" id="sigHint">✍️ Draw your name here</div></div><button class="sig-clear" onclick="clearSig()">Clear ✕</button></div><button class="finish-btn" id="finBtn" style="background:${s.color}" onclick="finishDay()" disabled>Done for Today! 🎉</button>`;
+  body.appendChild(sd);
+
+  show('story'); setupCanvas();
+}
+function shuffle(a){
+  const b=a.slice();
+  for(let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=b[i]; b[i]=b[j]; b[j]=t; }
+  return b;
+}
+function renderWW(step) {
+  const box=document.getElementById('wwBox'); if(!box) return;
+  const set=STORIES[currentDay].sameSound;
+  if(step>=set.length){
+    wwDone=true;
+    box.innerHTML='<div class="ww-done">✅ You got them all!</div>';
+    checkReady(); return;
+  }
+  box.innerHTML=`<div class="ww-count">Word ${step+1} of ${set.length}</div><div class="ww-q">${renderLine(set[step].means,[])}</div><div class="ww-opts">${shuffle(set).map(o=>`<button class="ww-btn" data-w="${esc(o.w)}">${esc(o.w)}</button>`).join('')}</div><div class="quiz-fb" id="wwFb"></div>`;
+  box.querySelectorAll('.ww-btn').forEach(b=>{ b.onclick=()=>pickWW(step,b); });
+}
+function pickWW(step,btn) {
+  if(btn.disabled) return;
+  const set=STORIES[currentDay].sameSound;
+  const want=set[step], got=set.find(x=>x.w===btn.getAttribute('data-w'));
+  const fb=document.getElementById('wwFb');
+  if(got.w===want.w){
+    document.querySelectorAll('.ww-btn').forEach(b=>{ b.disabled=true; });
+    btn.classList.add('correct'); btn.textContent='✓ '+got.w;
+    fb.textContent='✓ Yes! That is right!'; fb.className='quiz-fb good';
+    const tok=wwToken;
+    setTimeout(()=>{ if(tok===wwToken) renderWW(step+1); },1100);
+  } else {
+    btn.disabled=true; btn.classList.add('wrong');
+    fb.textContent='Not yet. '+got.w+' = '+got.means+'. Try again!'; fb.className='quiz-fb bad';
+  }
+}
+function answerQuiz(chosen,correct) {
+  if(quizDone) return; quizDone=true;
+  document.querySelectorAll('.qopt').forEach((o,i)=>{ o.classList.add('disabled'); if(i===correct) o.classList.add('correct'); else if(i===chosen) o.classList.add('wrong'); });
+  const fb=document.getElementById('qFb');
+  if(chosen===correct){fb.textContent='✅ Yes! That is right!';fb.className='quiz-fb good';}
+  else{fb.textContent='❌ Not quite — the green one is right.';fb.className='quiz-fb bad';}
+  checkReady();
+}
+function toggleChk(i) {
+  checks[i]=!checks[i];
+  document.getElementById('chk'+i).classList.toggle('checked',checks[i]);
+  document.getElementById('box'+i).textContent=checks[i]?'✓':'';
+  checkReady();
+}
+function checkReady() { document.getElementById('finBtn').disabled=!(checks.every(Boolean)&&hasSig&&quizDone&&wwDone); }
+function setupCanvas() {
+  sigCanvas=document.getElementById('sigCanvas');
+  sigCanvas.width=sigCanvas.parentElement.clientWidth||340;
+  sigCtx=sigCanvas.getContext('2d');
+  sigCtx.strokeStyle='#1A1A1A'; sigCtx.lineWidth=4; sigCtx.lineCap='round'; sigCtx.lineJoin='round';
+  function pos(e){const r=sigCanvas.getBoundingClientRect(),src=e.touches?e.touches[0]:e;return{x:src.clientX-r.left,y:src.clientY-r.top};}
+  sigCanvas.addEventListener('mousedown',e=>{drawing=true;const p=pos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);});
+  sigCanvas.addEventListener('mousemove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();hasSig=true;document.getElementById('sigHint').style.opacity='0';checkReady();});
+  sigCanvas.addEventListener('mouseup',()=>drawing=false);
+  sigCanvas.addEventListener('touchstart',e=>{drawing=true;const p=pos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);},{passive:false});
+  sigCanvas.addEventListener('touchmove',e=>{if(!drawing)return;e.preventDefault();const p=pos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();hasSig=true;document.getElementById('sigHint').style.opacity='0';checkReady();},{passive:false});
+  sigCanvas.addEventListener('touchend',()=>drawing=false);
+}
+function clearSig(){sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);hasSig=false;document.getElementById('sigHint').style.opacity='1';checkReady();}
+function finishDay() {
+  if(!completed.includes(currentDay)) completed.push(currentDay);
+  saveProgress();
+  const s=STORIES[currentDay];
+  document.getElementById('celName').textContent=userName+'!';
+  const msgs=["You finished Day "+s.day+".\nYou are doing great!","Day "+s.day+" is done.\nYou are getting stronger every day!","Another story done, "+userName+".\nKeep it up — you are on a roll!"];
+  document.getElementById('celMsg').textContent=msgs[currentDay%msgs.length];
+  show('celebrate');
+}
+window.onload=()=>{
+  try{const d=JSON.parse(localStorage.getItem(KEY)||'{}');if(d.name)document.getElementById('nameInput').value=d.name;}catch(e){}
+  // close the word popup when tapping anywhere on the overlay (incl. the card)
+  const wp=document.getElementById('wpop');
+  if(wp) wp.addEventListener('click', closeWord);
+};
+</script>
+</body>
+</html>

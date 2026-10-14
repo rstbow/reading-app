@@ -10,34 +10,43 @@
   body { font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
          background:linear-gradient(160deg,#0D3B1E 0%,#14532D 45%,#0D47A1 100%);
          min-height:100vh; color:white; display:flex; flex-direction:column;
-         align-items:center; justify-content:center; padding:36px 22px; text-align:center; }
+         align-items:center; justify-content:flex-start; padding:36px 22px 48px; text-align:center; }
   .hi { font-size:64px; margin-bottom:6px; animation:float 3s ease-in-out infinite; }
   @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
   h1 { font-size:36px; font-weight:900; line-height:1.15; margin-bottom:6px; text-shadow:0 4px 12px rgba(0,0,0,0.35); }
-  .sub { font-size:18px; font-weight:700; color:rgba(255,255,255,0.85); margin-bottom:34px; }
+  .sub { font-size:18px; font-weight:700; color:rgba(255,255,255,0.85); margin-bottom:8px; }
 
-  .cards { display:flex; flex-direction:column; gap:18px; width:100%; max-width:400px; }
-  .pick { display:block; text-decoration:none; color:#1A1A1A; background:white; border-radius:24px;
-          padding:24px 22px; box-shadow:0 10px 30px rgba(0,0,0,0.3); border:5px solid transparent;
-          transition:transform 0.15s; text-align:left; }
+  .cards { display:flex; flex-direction:column; gap:14px; width:100%; max-width:400px; }
+  .sec-h { width:100%; max-width:400px; text-align:left; font-size:20px; font-weight:900; margin:26px 0 12px; color:rgba(255,255,255,0.95); }
+  .pick { display:block; text-decoration:none; color:#1A1A1A; background:white; border-radius:20px;
+          padding:16px 18px; box-shadow:0 8px 24px rgba(0,0,0,0.28); border:5px solid transparent;
+          transition:transform 0.15s; text-align:left; position:relative; }
   .pick:active { transform:scale(0.97); }
   .pick.reading { border-color:var(--green); }
   .pick.math { border-color:var(--blue); }
-  .pick-top { display:flex; align-items:center; gap:16px; }
-  .pick-emoji { font-size:52px; flex-shrink:0; }
+  .pick.here { border-color:var(--gold); box-shadow:0 8px 28px rgba(249,168,37,0.55); }
+  .here-tag { display:inline-block; background:var(--gold); color:#1A1A1A; font-size:12px; font-weight:900; letter-spacing:0.5px; padding:3px 10px; border-radius:20px; margin-bottom:8px; }
+  .pick-top { display:flex; align-items:center; gap:14px; }
+  .pick-emoji { font-size:42px; flex-shrink:0; }
   .pick-t { flex:1; }
-  .pick-t h2 { font-size:28px; font-weight:900; line-height:1.1; }
-  .pick-t p { font-size:15px; font-weight:700; color:#6B7280; margin-top:3px; }
-  .pick-go { font-size:30px; font-weight:900; color:#CBD5E1; }
+  .pick-t h2 { font-size:21px; font-weight:900; line-height:1.15; }
+  .pick-t p { font-size:14px; font-weight:800; color:#6B7280; margin-top:2px; }
+  .pick-go { font-size:26px; font-weight:900; color:#CBD5E1; }
 
-  .bar-wrap { margin-top:16px; }
+  .bar-wrap { margin-top:12px; }
   .bar-lbl { display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:#6B7280; margin-bottom:6px; }
   .bar { background:#E2E8F0; border-radius:20px; height:12px; overflow:hidden; }
   .bar-fill { height:100%; border-radius:20px; transition:width 0.6s ease; }
   .pick.reading .bar-fill { background:var(--green); }
   .pick.math .bar-fill { background:var(--blue); }
-  .done-tag { color:var(--gold); }
-  .next-tag { color:#94A3B8; }
+  .done-tag { color:#B7791F; }
+
+  details.earlier { width:100%; max-width:400px; margin-top:16px; text-align:left; }
+  details.earlier summary { cursor:pointer; font-size:17px; font-weight:800; color:rgba(255,255,255,0.9); padding:12px 4px; list-style:none; }
+  details.earlier summary::-webkit-details-marker { display:none; }
+  details.earlier summary::before { content:'▸ '; }
+  details.earlier[open] summary::before { content:'▾ '; }
+  details.earlier .cards { margin-top:6px; }
 
   .foot { margin-top:32px; font-size:15px; font-weight:700; color:rgba(255,255,255,0.75); line-height:1.6; }
 </style>
@@ -46,63 +55,47 @@
 
   <div class="hi" id="hi">🌟</div>
   <h1 id="title">Trent's Adventure</h1>
-  <p class="sub">Pick what you want to do today</p>
+  <p class="sub">Pick a book</p>
 
-  <div class="cards">
-    <a class="pick reading" id="readCard" href="series3-johnny-plants-the-world.html">
-      <div class="pick-top">
-        <div class="pick-emoji">📖</div>
-        <div class="pick-t">
-          <h2>Reading</h2>
-          <p id="readSub">Book 1 • Johnny Plants the World</p>
-        </div>
-        <div class="pick-go">➜</div>
-      </div>
-      <div class="bar-wrap">
-        <div class="bar-lbl"><span id="readProg">0 of 10 days done</span><span id="readDone"></span></div>
-        <div class="bar"><div class="bar-fill" id="readFill" style="width:0%"></div></div>
-      </div>
-    </a>
+  <h2 class="sec-h">📖 Reading</h2>
+  <div class="cards" id="readList"></div>
+  <details class="earlier" id="earlier">
+    <summary>Earlier books</summary>
+    <div class="cards" id="readOld"></div>
+  </details>
 
-    <a class="pick math" id="mathCard" href="math.html">
-      <div class="pick-top">
-        <div class="pick-emoji">➕</div>
-        <div class="pick-t">
-          <h2>Math</h2>
-          <p id="mathSub">Book 1 • Add &amp; Take Away</p>
-        </div>
-        <div class="pick-go">➜</div>
-      </div>
-      <div class="bar-wrap">
-        <div class="bar-lbl"><span id="mathProg">0 of 10 days done</span><span id="mathDone"></span></div>
-        <div class="bar"><div class="bar-fill" id="mathFill" style="width:0%"></div></div>
-      </div>
-    </a>
-  </div>
+  <h2 class="sec-h">➕ Math</h2>
+  <div class="cards" id="mathList"></div>
 
   <div class="foot">Do one a day.<br>You do not have to do both. 👊</div>
 
 <script>
 /* ---------------------------------------------------------------------------
    THE MENU — this is what Trent lands on from the texted link.
-   Pick Reading or Math, then he sees that book's 10 days.
+   Every book is its own card with its own progress bar. Tap a book to open it.
 
-   BOOKS, IN ORDER. The menu opens the FIRST book he has not finished, so
-   shipping a new book never yanks him out of one he is part way through —
-   the new one shows up on its own the day he finishes the last one.
+   Reading shows Book 6 and up first; the earlier books sit under
+   "Earlier books" (that fold opens by itself if he is still on one of them).
+   The gold "You are here" card is the first book he has not finished.
 
-   To add Book 5 (or Math Book 3): append one line to the right list below.
+   TO ADD A BOOK: append one line to READING (or MATH) below.
    `key` must match the KEY constant inside that file, or progress reads 0.
+   `num` is the number on the book's cover. `old:true` puts it under
+   "Earlier books".
 --------------------------------------------------------------------------- */
 const READING = [
-  { file:'series3-johnny-plants-the-world.html', key:'trent_reading_world_v1', name:'Johnny Plants the World' },
-  { file:'series4-the-tree-that-woke-up.html',   key:'trent_reading_tree_v1',  name:'The Tree That Woke Up'   },
-  { file:'series5-the-storm-and-the-roots.html', key:'trent_reading_storm_v1', name:'The Storm and the Roots' },
-  { file:'series6-the-sprout-and-the-sea.html', key:'trent_reading_sprout_v1', name:'The Sprout and the Sea' },
+  { num:3,  emoji:'🌍', file:'series3-johnny-plants-the-world.html',  key:'trent_reading_world_v1',  name:'Johnny Plants the World',      old:true },
+  { num:4,  emoji:'🌳', file:'series4-the-tree-that-woke-up.html',    key:'trent_reading_tree_v1',   name:'The Tree That Woke Up',        old:true },
+  { num:5,  emoji:'⛈️', file:'series5-the-storm-and-the-roots.html',  key:'trent_reading_storm_v1',  name:'The Storm and the Roots',      old:true },
+  { num:6,  emoji:'🌱', file:'series6-the-sprout-and-the-sea.html',   key:'trent_reading_sprout_v1', name:'The Sprout and the Sea' },
+  { num:7,  emoji:'⛵', file:'series7-the-ship-to-the-gray-isle.html', key:'trent_reading_ship_v1',  name:'The Ship to the Gray Isle' },
+  { num:8,  emoji:'🗝️', file:'series8-the-cave-under-the-isle.html',  key:'trent_reading_cave_v1',   name:'The Cave Under the Isle' },
+  { num:9,  emoji:'🌲', file:'series9-the-baron-and-the-axes.html',   key:'trent_reading_baron_v1',  name:'The Baron and the Axes' },
+  { num:10, emoji:'🌟', file:'series10-the-tree-that-knew-everyone.html', key:'trent_reading_names_v1', name:'The Tree That Knew Everyone' },
 ];
 const MATH = [
-  { file:'math.html',  key:'trent_math_v1',  name:'Add & Take Away'         },
-  { file:'math2.html', key:'trent_math2_v1', name:'Carry & Take a Ten Back' },
+  { num:1, emoji:'➕', file:'math.html',  key:'trent_math_v1',  name:'Add & Take Away'         },
+  { num:2, emoji:'➖', file:'math2.html', key:'trent_math2_v1', name:'Carry & Take a Ten Back' },
 ];
 
 function daysDone(key){
@@ -121,26 +114,41 @@ function savedName(){
   return '';
 }
 // the book he is on = the first one that is not finished (else the last one)
-function bookIndex(books){
-  for (let i = 0; i < books.length; i++) if (daysDone(books[i].key) < 10) return i;
-  return books.length - 1;
+function currentBook(books){
+  for (const b of books) if (daysDone(b.key) < 10) return b;
+  return books[books.length - 1];
 }
-function paint(prefix, books){
-  const i = bookIndex(books), b = books[i], n = daysDone(b.key);
-  const more = i < books.length - 1;
-  document.getElementById(prefix+'Card').href = b.file;
-  document.getElementById(prefix+'Sub').textContent = 'Book ' + (i+1) + ' • ' + b.name;
-  document.getElementById(prefix+'Prog').textContent = n + ' of 10 days done';
-  document.getElementById(prefix+'Fill').style.width = (n*10) + '%';
-  document.getElementById(prefix+'Done').innerHTML =
-    n >= 10  ? '<span class="done-tag">★ ALL DONE</span>' :
-    more     ? '<span class="next-tag">Book ' + (i+2) + ' next</span>' : '';
+function card(b, kind, isHere){
+  const n = daysDone(b.key);
+  const a = document.createElement('a');
+  a.className = 'pick ' + kind + (isHere ? ' here' : '');
+  a.href = b.file;
+  const tag = isHere ? '<div class="here-tag">👉 You are here</div>' : '';
+  a.innerHTML = tag +
+    '<div class="pick-top"><div class="pick-emoji"></div><div class="pick-t"><h2></h2><p></p></div><div class="pick-go">➜</div></div>' +
+    '<div class="bar-wrap"><div class="bar-lbl"><span class="prog"></span><span class="dn"></span></div>' +
+    '<div class="bar"><div class="bar-fill"></div></div></div>';
+  a.querySelector('.pick-emoji').textContent = b.emoji;
+  a.querySelector('h2').textContent = b.name;
+  a.querySelector('p').textContent = (kind === 'math' ? 'Math • Book ' : 'Book ') + b.num;
+  a.querySelector('.prog').textContent = n + ' of 10 days done';
+  a.querySelector('.dn').innerHTML = n >= 10 ? '<span class="done-tag">★ ALL DONE</span>' : '';
+  a.querySelector('.bar-fill').style.width = (Math.min(n,10) * 10) + '%';
+  return a;
+}
+function fill(id, books, kind, here){
+  const box = document.getElementById(id);
+  box.innerHTML = '';
+  books.forEach(b => box.appendChild(card(b, kind, b === here)));
 }
 window.onload = () => {
   const name = savedName();
   if (name) document.getElementById('title').textContent = name + "'s Adventure";
-  paint('read', READING);
-  paint('math', MATH);
+  const here = currentBook(READING);
+  fill('readList', READING.filter(b => !b.old), 'reading', here);
+  fill('readOld',  READING.filter(b => b.old).reverse(), 'reading', here);
+  if (here.old) document.getElementById('earlier').open = true;
+  fill('mathList', MATH, 'math', currentBook(MATH));
 };
 </script>
 </body>
