@@ -40,6 +40,7 @@
   .pick.reading .bar-fill { background:var(--green); }
   .pick.math .bar-fill { background:var(--blue); }
   .done-tag { color:#B7791F; }
+  .pick.game { border-color:#8E24AA; }
 
   details.earlier { width:100%; max-width:400px; margin-top:16px; text-align:left; }
   details.earlier summary { cursor:pointer; font-size:17px; font-weight:800; color:rgba(255,255,255,0.9); padding:12px 4px; list-style:none; }
@@ -66,6 +67,9 @@
 
   <h2 class="sec-h">➕ Math</h2>
   <div class="cards" id="mathList"></div>
+
+  <h2 class="sec-h">🎮 Games</h2>
+  <div class="cards" id="gameList"></div>
 
   <div class="foot">Do one a day.<br>You do not have to do both. 👊</div>
 
@@ -98,6 +102,25 @@ const MATH = [
   { num:2, emoji:'➖', file:'math2.html', key:'trent_math2_v1', name:'Carry & Take a Ten Back' },
 ];
 
+// games: no days, just a best score he can chase (saved by the game itself)
+const GAMES = [
+  { emoji:'🚰', file:'pipe-flow.html', key:'trent_pipeflow_v1', name:'Pipe Flow' },
+];
+function gameCard(g){
+  let best = '';
+  try {
+    const d = JSON.parse(localStorage.getItem(g.key) || '{}');
+    if (d.level) best = 'Best: level ' + d.level + ' • ' + (d.score || 0) + ' points';
+  } catch(e){}
+  const a = document.createElement('a');
+  a.className = 'pick game';
+  a.href = g.file;
+  a.innerHTML = '<div class="pick-top"><div class="pick-emoji"></div><div class="pick-t"><h2></h2><p></p></div><div class="pick-go">➜</div></div>';
+  a.querySelector('.pick-emoji').textContent = g.emoji;
+  a.querySelector('h2').textContent = g.name;
+  a.querySelector('p').textContent = best || 'Build pipes. Keep the water going!';
+  return a;
+}
 function daysDone(key){
   try {
     const d = JSON.parse(localStorage.getItem(key) || '{}');
@@ -149,6 +172,8 @@ window.onload = () => {
   fill('readOld',  READING.filter(b => b.old).reverse(), 'reading', here);
   if (here.old) document.getElementById('earlier').open = true;
   fill('mathList', MATH, 'math', currentBook(MATH));
+  const gl = document.getElementById('gameList');
+  GAMES.forEach(g => gl.appendChild(gameCard(g)));
 };
 </script>
 </body>
