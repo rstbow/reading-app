@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pipe Flow</title>
+<style>
+  :root { --gold:#F9A825; --green:#388E3C; --blue:#0288D1; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif; color:white; overflow:hidden;
+         background:linear-gradient(160deg,#0D3B1E 0%,#14532D 45%,#0D47A1 100%);
+         display:flex; flex-direction:column; align-items:center; user-select:none; -webkit-user-select:none; touch-action:manipulation; }
+  #app { width:100%; max-width:480px; padding:10px 12px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+
+  .hdr { width:100%; display:flex; align-items:center; gap:8px; }
+  .ib { width:44px; height:44px; border-radius:12px; background:rgba(255,255,255,0.16); border:2px solid rgba(255,255,255,0.3); color:white; font-size:20px; display:flex; align-items:center; justify-content:center; text-decoration:none; cursor:pointer; font-family:inherit; flex-shrink:0; }
+  .ib:active { transform:scale(0.94); }
+  .lvl { flex:1; font-size:20px; font-weight:900; text-align:center; line-height:1.1; }
+  .lvl small { display:block; font-size:13px; font-weight:800; opacity:0.85; }
+  .lives { font-size:20px; letter-spacing:1px; min-width:64px; text-align:right; }
+
+  .goal { width:100%; }
+  .goal-lbl { display:flex; justify-content:space-between; font-size:13px; font-weight:800; opacity:0.9; margin-bottom:4px; }
+  .goal-bar { background:rgba(255,255,255,0.22); height:14px; border-radius:20px; overflow:hidden; }
+  .goal-fill { height:100%; width:0%; background:linear-gradient(90deg,#29B6F6,#81D4FA); border-radius:20px; transition:width 0.3s; }
+
+  .top { width:100%; display:flex; align-items:center; gap:10px; }
+  #queue { background:rgba(0,0,0,0.25); border-radius:14px; border:2px solid rgba(255,255,255,0.2); flex-shrink:0; }
+  .timer { flex:1; min-width:0; text-align:center; font-size:28px; font-weight:900; line-height:1; }
+  .timer small { display:block; font-size:12px; font-weight:800; opacity:0.8; margin-top:3px; }
+  .go { background:var(--gold); color:#1A1A1A; border:none; border-radius:14px; height:52px; width:78px; padding:0 6px; font-family:inherit; font-size:18px; font-weight:900; cursor:pointer; box-shadow:0 5px 16px rgba(249,168,37,0.4); flex-shrink:0; }
+  .go:active { transform:scale(0.95); }
+  .go.on { background:#29B6F6; box-shadow:0 5px 16px rgba(41,182,246,0.5); }
+
+  #wrap { position:relative; border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.4); border:3px solid #6D4C41; }
+  canvas#board { display:block; touch-action:none; }
+
+  .ov { position:absolute; inset:0; background:rgba(6,30,18,0.88); display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px; gap:12px; }
+  .ov.show { display:flex; }
+  .ov h2 { font-size:30px; font-weight:900; line-height:1.1; }
+  .ov p { font-size:17px; font-weight:700; opacity:0.92; line-height:1.4; }
+  .ov .steps { text-align:left; font-size:18px; font-weight:800; line-height:1.9; }
+  .ov .big { font-size:52px; line-height:1; }
+  .btn { background:var(--gold); color:#1A1A1A; border:none; border-radius:16px; padding:16px 36px; font-family:inherit; font-size:22px; font-weight:900; cursor:pointer; box-shadow:0 6px 24px rgba(249,168,37,0.45); }
+  .btn:active { transform:scale(0.96); }
+  .foot { font-size:13px; font-weight:700; opacity:0.75; text-align:center; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <a class="ib" href="index.html" title="Menu">🏠</a>
+    <div class="lvl" id="lvl">🌱 Level 1<small id="score">0 points</small></div>
+    <button class="ib" id="snd" title="Sound">🔊</button>
+    <div class="lives" id="lives">❤️❤️❤️</div>
+  </div>
+
+  <div class="goal">
+    <div class="goal-lbl"><span>💧 Make the water go this far</span><span id="goalTxt">0 / 8</span></div>
+    <div class="goal-bar"><div class="goal-fill" id="goalFill"></div></div>
+  </div>
+
+  <div class="top">
+    <canvas id="queue"></canvas>
+    <div class="timer" id="timer">💧 20<small id="timerSub">seconds</small></div>
+    <button class="go" id="go">▶ Go!</button>
+  </div>
+
+  <div id="wrap">
+    <canvas id="board"></canvas>
+    <div class="ov show" id="ov"></div>
+  </div>
+
+  <div class="foot">Tap a square to drop the next pipe 👆</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ---------------------------------------------------------------------------
+   PIPE FLOW — a Pipe Mania style game for Trent.
+   Pipes arrive in the queue. Tap a square to drop the next one. Water starts
+   to flow from the well after a short wait. Keep the pipes joined so the water
+   keeps going. Make it go the whole goal to finish the level.
+   Everything is drawn on a canvas. Only his best score is saved (KEY below).
+--------------------------------------------------------------------------- */
+const COLS = 7, ROWS = 8;
+const KEY = 'trent_pipeflow_v1';
+const N=0, E=1, S=2, W=3;
+const OPP = [2,3,0,1], DR = [-1,0,1,0], DC = [0,1,0,-1];
+// piece types: list of side pairs the water can travel between
+const TYPES = [
+  [[W,E]], [[N,S]],                    // 0 across, 1 up-down
+  [[N,E]], [[E,S]], [[S,W]], [[W,N]],  // 2-5 corners
+  [[N,S],[W,E]]                        // 6 cross (water can pass twice)
+];
+const SPROUTS = ['🌱','🌿','🌿','🪴','🌳'];
+
+let $ = id => document.getElementById(id);
+let board, bctx, queueCv, qctx, cell = 48, dpr = 1;
+let level = 1, score = 0, lives = 3, best = { level:1, score:0 };
+let grid = [], start = null, queue = [];
+let phase = 'intro';            // intro | build | flow | spill | won | lost | over
+let countdown = 0, headMs = 0, tileMs = 2400, goal = 8, filled = 0, flow = null, ff = false;
+let spill = null, floaters = [], soundOn = true, actx = null;
+
+/* ---------- save (best only) ---------- */
+function loadBest(){ try { const d = JSON.parse(localStorage.getItem(KEY)||'{}'); if (d.level) best = { level:d.level|0, score:d.score|0 }; } catch(e){} }
+function saveBest(){ try { localStorage.setItem(KEY, JSON.stringify(best)); } catch(e){} }
+
+/* ---------- sound (tiny beeps, no files) ---------- */
+function beep(freq, dur, type, vol){
+  if (!soundOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.value = vol || 0.06;
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+    o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + dur);
+  } catch(e){}
+}
+const sfxPlace = () => beep(440, 0.08, 'triangle');
+const sfxTile  = () => beep(660, 0.10, 'sine', 0.05);
+const sfxBad   = () => beep(130, 0.45, 'sawtooth', 0.07);
+const sfxWin   = () => [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'triangle',0.07), i*110));
+
+/* ---------- pieces ---------- */
+function randType(){
+  const r = Math.random();
+  if (r < 0.07) return 6;                    // cross is rare
+  return Math.floor(Math.random()*6);        // across, up-down, 4 corners
+}
+function makeConns(t){ return TYPES[t].map(p => ({ a:p[0], b:p[1], fill:0, from:-1 })); }
+function refillQueue(){ while (queue.length < 5) queue.push(randType()); }
+
+/* ---------- geometry (cell units 0..1) ---------- */
+const MID = [[.5,0],[1,.5],[.5,1],[0,.5]];
+function sidePath(a, b, n){
+  n = n || 16;
+  const A = MID[a], B = MID[b], pts = [];
+  if (OPP[a] === b){
+    for (let i=0;i<=n;i++) pts.push([A[0]+(B[0]-A[0])*i/n, A[1]+(B[1]-A[1])*i/n]);
+    return pts;
+  }
+  const cx = (a===E||b===E)?1:0, cy = (a===S||b===S)?1:0;
+  const a0 = Math.atan2(A[1]-cy, A[0]-cx), a1 = Math.atan2(B[1]-cy, B[0]-cx);
+  let d = a1 - a0;
+  while (d >  Math.PI) d -= 2*Math.PI;
+  while (d < -Math.PI) d += 2*Math.PI;
+  for (let i=0;i<=n;i++){ const ang = a0 + d*i/n; pts.push([cx+0.5*Math.cos(ang), cy+0.5*Math.sin(ang)]); }
+  return pts;
+}
+function partial(pts, f){
+  if (f >= 1) return pts;
+  const last = (pts.length-1)*f, k = Math.floor(last), fr = last-k, out = pts.slice(0, k+1);
+  if (k+1 < pts.length) out.push([pts[k][0]+(pts[k+1][0]-pts[k][0])*fr, pts[k][1]+(pts[k+1][1]-pts[k][1])*fr]);
+  return out;
+}
+function strokePts(ctx, ox, oy, S, pts, width, color){
+  if (pts.length < 2) return;
+  ctx.beginPath();
+  pts.forEach((p,i)=>{ const x=ox+p[0]*S, y=oy+p[1]*S; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+  ctx.lineWidth = width; ctx.strokeStyle = color; ctx.lineCap = 'butt'; ctx.lineJoin = 'round'; ctx.stroke();
+}
+function drawPipe(ctx, ox, oy, S, conns, withWater){
+  conns.forEach(c => strokePts(ctx, ox, oy, S, sidePath(c.a,c.b), S*0.46, '#4E5D6A'));
+  conns.forEach(c => strokePts(ctx, ox, oy, S, sidePath(c.a,c.b), S*0.34, '#B7C4CC'));
+  conns.forEach(c => strokePts(ctx, ox, oy, S, sidePath(c.a,c.b), S*0.12, '#DDE6EA'));
+  if (withWater) conns.forEach(c => {
+    if (c.fill <= 0) return;
+    const other = c.a === c.from ? c.b : c.a;
+    strokePts(ctx, ox, oy, S, partial(sidePath(c.from, other, 20), Math.min(1,c.fill)), S*0.24, '#29B6F6');
+  });
+}
+
+/* ---------- level setup ---------- */
+function newLevel(){
+  goal = Math.min(6 + 2*level, 34);
+  headMs = Math.max(8000, 22000 - 1000*level);
+  tileMs = Math.max(900, 2600 - 160*level);
+  countdown = headMs; filled = 0; flow = null; ff = false; spill = null; floaters = [];
+  grid = [];
+  for (let r=0;r<ROWS;r++){ grid.push([]); for (let c=0;c<COLS;c++) grid[r].push({ rock:false, type:-1, conns:[], touched:false, pop:0 }); }
+  // well: inside the board, pointing to where there is room
+  let tries = 0, ok = false;
+  while (!ok && tries++ < 200){
+    const r = 1 + Math.floor(Math.random()*(ROWS-2)), c = 1 + Math.floor(Math.random()*(COLS-2));
+    const dirs = [];
+    for (let d=0; d<4; d++){
+      let room = 0, rr = r+DR[d], cc = c+DC[d];
+      while (rr>=0 && cc>=0 && rr<ROWS && cc<COLS){ room++; rr += DR[d]; cc += DC[d]; }
+      if (room >= 4) dirs.push(d);
+    }
+    if (dirs.length){ start = { r:r, c:c, d:dirs[Math.floor(Math.random()*dirs.length)] }; ok = true; }
+  }
+  // rocks (from level 2), never right in front of the well
+  const rocks = Math.min(level-1, 9);
+  let placed = 0; tries = 0;
+  while (placed < rocks && tries++ < 400){
+    const r = Math.floor(Math.random()*ROWS), c = Math.floor(Math.random()*COLS);
+    if (grid[r][c].rock || (r===start.r && c===start.c)) continue;
+    let near = false;
+    for (let k=1;k<=2;k++){ if (r===start.r+DR[start.d]*k && c===start.c+DC[start.d]*k) near = true; }
+    if (Math.abs(r-start.r)+Math.abs(c-start.c) <= 1) near = true;
+    if (near) continue;
+    grid[r][c].rock = true; placed++;
+  }
+  queue = []; refillQueue();
+  phase = 'build';
+  hideOv(); updateHud(); drawQueue();
+}
+
+/* ---------- input ---------- */
+function place(r, c){
+  if (phase !== 'build' && phase !== 'flow') return;
+  const g = grid[r][c];
+  if (g.rock || (r===start.r && c===start.c) || g.touched) { beep(200, 0.08, 'square', 0.04); return; }
+  if (g.type >= 0) score = Math.max(0, score - 50);   // swapping a pipe costs a little
+  g.type = queue.shift(); g.conns = makeConns(g.type); g.pop = performance.now();
+  refillQueue(); sfxPlace(); drawQueue(); updateHud();
+}
+function onPointer(e){
+  e.preventDefault();
+  const rect = board.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (board.width/dpr / rect.width);
+  const y = (e.clientY - rect.top)  * (board.height/dpr / rect.height);
+  const c = Math.floor(x/cell), r = Math.floor(y/cell);
+  if (r>=0 && c>=0 && r<ROWS && c<COLS) place(r, c);
+}
+
+/* ---------- flow ---------- */
+function edgePoint(r, c, side){ return { x:(c+MID[side][0])*cell, y:(r+MID[side][1])*cell, side:side }; }
+function enter(r, c, from){
+  if (r<0 || c<0 || r>=ROWS || c>=COLS) return false;
+  const g = grid[r][c];
+  if (g.rock || g.type < 0) return false;
+  const k = g.conns.findIndex(cn => cn.a===from || cn.b===from);
+  if (k < 0) return false;
+  const cn = g.conns[k];
+  if (cn.fill > 0) return false;
+  cn.from = from; cn.fill = 0.0001; g.touched = true;
+  flow = { r:r, c:c, k:k, from:from, to:(cn.a===from ? cn.b : cn.a), p:0 };
+  return true;
+}
+function startFlow(early){
+  if (phase !== 'build') return;
+  if (early) { const bonus = Math.floor(countdown/1000)*10; if (bonus){ score += bonus; floater('+'+bonus+' early!', start.c, start.r, '#FFD54F'); } }
+  phase = 'flow'; ff = false;
+  const r = start.r + DR[start.d], c = start.c + DC[start.d];
+  if (!enter(r, c, OPP[start.d])) doSpill(edgePoint(start.r, start.c, start.d));
+  updateHud();
+}
+function doSpill(pt){
+  phase = 'spill'; spill = { x:pt.x, y:pt.y, t:0, side:pt.side, drops:[] };
+  for (let i=0;i<22;i++) spill.drops.push({ a:(Math.random()-0.5)*1.8, v:0.05+Math.random()*0.18, s:2+Math.random()*3 });
+  sfxBad(); updateHud();
+}
+function stepFlow(dt){
+  flow.p += dt * (ff ? 3 : 1) / tileMs;
+  const g = grid[flow.r][flow.c], cn = g.conns[flow.k];
+  cn.fill = Math.min(1, flow.p);
+  let guard = 0;
+  while (flow.p >= 1 && phase === 'flow' && guard++ < 4){
+    cn.fill = 1; filled++; score += 100; sfxTile();
+    floater('+100', flow.c, flow.r, '#E1F5FE');
+    if (g.type === 6 && g.conns[0].fill >= 1 && g.conns[1].fill >= 1){ score += 300; floater('Double! +300', flow.c, flow.r - 0.5, '#FFD54F'); }
+    updateHud();
+    if (filled >= goal){ win(); return; }
+    const to = flow.to, r = flow.r + DR[to], c = flow.c + DC[to], carry = flow.p - 1, pt = edgePoint(flow.r, flow.c, to);
+    if (!enter(r, c, OPP[to])) { doSpill(pt); return; }
+    flow.p = carry;
+    return;
+  }
+}
+
+/* ---------- win / lose ---------- */
+function win(){
+  phase = 'won'; sfxWin();
+  if (level > best.level || (level === best.level && score > best.score) || score > best.score){ best = { level:Math.max(level,best.level), score:Math.max(score,best.score) }; saveBest(); }
+  showOv('<div class="big">'+SPROUTS[Math.min(level, SPROUTS.length)-1]+'</div><h2>Level '+level+' done!</h2><p>'+score+' points</p><button class="btn" id="ovBtn">Next level ➜</button>', () => { level++; newLevel(); });
+}
+function lose(){
+  lives--; updateHud();
+  if (best.score < score){ best.score = score; best.level = Math.max(best.level, level); saveBest(); }
+  if (lives > 0){
+    phase = 'lost';
+    showOv('<div class="big">💦</div><h2>Water spilled!</h2><p>'+'❤️'.repeat(lives)+' left</p><button class="btn" id="ovBtn">Try again</button>', () => newLevel());
+  } else {
+    phase = 'over';
+    showOv('<div class="big">🌵</div><h2>Game over</h2><p>You got to level '+level+'<br>'+score+' points</p><button class="btn" id="ovBtn">Play again</button>', () => { level = 1; score = 0; lives = 3; newLevel(); });
+  }
+}
+function showOv(html, onBtn){
+  const ov = $('ov'); ov.innerHTML = html; ov.classList.add('show');
+  const b = $('ovBtn'); if (b) b.onclick = () => { hideOv(); onBtn(); };
+}
+function hideOv(){ $('ov').classList.remove('show'); }
+function showIntro(){
+  phase = 'intro';
+  showOv('<div class="big">💧</div><h2>Pipe Flow</h2>'
+    + '<div class="steps">1️⃣ Tap a square to drop the pipe<br>2️⃣ Join the pipes to the well 💧<br>3️⃣ Keep the water going!</div>'
+    + '<p>Best: 🌱 level '+best.level+'</p><button class="btn" id="ovBtn">Play!</button>', () => { level = 1; score = 0; lives = 3; newLevel(); });
+}
+
+/* ---------- hud ---------- */
+function floater(text, c, r, color){ floaters.push({ text:text, x:(c+0.5)*cell, y:(r+0.4)*cell, t:0, color:color||'#fff' }); }
+function updateHud(){
+  $('lvl').innerHTML = SPROUTS[Math.min(level, SPROUTS.length)-1] + ' Level ' + level + '<small>' + score + ' points</small>';
+  $('lives').textContent = '❤️'.repeat(Math.max(0,lives)) + '🤍'.repeat(Math.max(0,3-lives));
+  $('goalTxt').textContent = filled + ' / ' + goal;
+  $('goalFill').style.width = Math.min(100, filled/goal*100) + '%';
+  const go = $('go');
+  if (phase === 'build'){
+    $('timer').innerHTML = '💧 ' + Math.ceil(countdown/1000) + '<small id="timerSub">seconds</small>';
+    go.textContent = '▶ Go!'; go.classList.remove('on');
+  } else if (phase === 'flow' || phase === 'spill'){
+    $('timer').innerHTML = '🌊<small id="timerSub">flowing</small>';
+    go.textContent = '⏩ ×3'; go.classList.toggle('on', ff);
+  }
+}
+
+/* ---------- drawing ---------- */
+function resize(){
+  dpr = window.devicePixelRatio || 1;
+  const availW = Math.min(window.innerWidth - 30, 456);
+  const availH = window.innerHeight - 250;
+  cell = Math.max(34, Math.floor(Math.min(availW/COLS, availH/ROWS)));
+  board.width = cell*COLS*dpr; board.height = cell*ROWS*dpr;
+  board.style.width = cell*COLS + 'px'; board.style.height = cell*ROWS + 'px';
+  bctx.setTransform(dpr,0,0,dpr,0,0);
+  const q = qSize();
+  queueCv.width = (q*5 + 12)*dpr; queueCv.height = (q + 8)*dpr;
+  queueCv.style.width = (q*5+12)+'px'; queueCv.style.height = (q+8)+'px';
+  qctx.setTransform(dpr,0,0,dpr,0,0);
+  drawQueue();
+}
+function qSize(){
+  const topW = Math.min(window.innerWidth - 24, 456);
+  return Math.max(28, Math.min(46, Math.floor((topW - 176) / 5)));
+}
+function drawQueue(){
+  if (!qctx) return;
+  const q = qSize();
+  qctx.clearRect(0,0,queueCv.width,queueCv.height);
+  for (let i=0;i<5;i++){
+    const t = queue[i]; if (t === undefined) continue;
+    const x = 4 + i*(q+1), y = 4;
+    qctx.fillStyle = i===0 ? '#F5E6C0' : '#CDBB93';
+    qctx.fillRect(x, y, q, q);
+    drawPipe(qctx, x, y, q, makeConns(t), false);
+    if (i===0){ qctx.lineWidth = 3; qctx.strokeStyle = '#F9A825'; qctx.strokeRect(x+1.5, y+1.5, q-3, q-3); }
+  }
+}
+function draw(now){
+  const ctx = bctx, S = cell;
+  ctx.clearRect(0,0,S*COLS,S*ROWS);
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+    const x = c*S, y = r*S, g = grid[r] && grid[r][c];
+    ctx.fillStyle = (r+c)%2 ? '#D9C79F' : '#E3D3AD';
+    ctx.fillRect(x, y, S, S);
+    ctx.strokeStyle = 'rgba(120,90,50,0.25)'; ctx.lineWidth = 1; ctx.strokeRect(x+0.5, y+0.5, S-1, S-1);
+    if (!g) continue;
+    if (g.rock){
+      ctx.font = Math.floor(S*0.7)+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle = '#000'; ctx.fillText('🪨', x+S/2, y+S/2+2);
+    } else if (g.type >= 0){
+      const age = now - g.pop, k = age < 160 ? 0.82 + 0.18*(age/160) : 1;
+      ctx.save(); ctx.translate(x+S/2, y+S/2); ctx.scale(k,k); ctx.translate(-S/2, -S/2);
+      drawPipe(ctx, 0, 0, S, g.conns, true);
+      ctx.restore();
+    }
+  }
+  // the well
+  if (start){
+    const x = start.c*S, y = start.r*S;
+    ctx.fillStyle = '#C9B88F'; ctx.fillRect(x, y, S, S);
+    strokePts(ctx, x, y, S, sidePath(OPP[start.d], start.d), S*0.46, '#4E5D6A');
+    strokePts(ctx, x, y, S, sidePath(OPP[start.d], start.d), S*0.34, '#B7C4CC');
+    if (phase !== 'build' && phase !== 'intro') strokePts(ctx, x, y, S, sidePath(OPP[start.d], start.d).filter((p,i,a)=>i>=a.length/2), S*0.24, '#29B6F6');
+    ctx.beginPath(); ctx.arc(x+S/2, y+S/2, S*0.33, 0, Math.PI*2);
+    ctx.fillStyle = '#0277BD'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#B3E5FC'; ctx.stroke();
+    ctx.font = Math.floor(S*0.42)+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
+    ctx.fillText('💧', x+S/2, y+S/2+1);
+  }
+  // spill splash
+  if (spill){
+    const t = spill.t;
+    spill.drops.forEach(d => {
+      const ang = [-Math.PI/2, 0, Math.PI/2, Math.PI][spill.side] + d.a;
+      const dist = d.v*t*0.14, gy = 0.0004*t*t*0.2;
+      ctx.beginPath(); ctx.arc(spill.x + Math.cos(ang)*dist, spill.y + Math.sin(ang)*dist + gy, d.s, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(41,182,246,'+Math.max(0,1-t/900)+')'; ctx.fill();
+    });
+  }
+  // floating scores
+  floaters.forEach(f => {
+    const a = Math.max(0, 1 - f.t/900);
+    ctx.globalAlpha = a; ctx.font = '900 '+Math.floor(S*0.34)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.strokeText(f.text, f.x, f.y - f.t*0.04);
+    ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y - f.t*0.04);
+    ctx.globalAlpha = 1;
+  });
+}
+
+/* ---------- loop ---------- */
+let last = 0;
+function frame(ts){
+  const dt = Math.min(60, ts - (last || ts)); last = ts;
+  if (phase === 'build'){
+    countdown -= dt;
+    if (countdown <= 0){ countdown = 0; startFlow(false); }
+    updateHud();
+  } else if (phase === 'flow' && flow){
+    stepFlow(dt);
+  } else if (phase === 'spill' && spill){
+    spill.t += dt;
+    if (spill.t > 1100){ spill = null; lose(); }
+  }
+  floaters.forEach(f => f.t += dt); floaters = floaters.filter(f => f.t < 900);
+  draw(ts);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- boot ---------- */
+function boot(){
+  board = $('board'); bctx = board.getContext('2d');
+  queueCv = $('queue'); qctx = queueCv.getContext('2d');
+  loadBest();
+  board.addEventListener('pointerdown', onPointer);
+  $('go').onclick = () => {
+    if (phase === 'build') startFlow(true);
+    else if (phase === 'flow'){ ff = !ff; updateHud(); }
+  };
+  $('snd').onclick = () => { soundOn = !soundOn; $('snd').textContent = soundOn ? '🔊' : '🔇'; };
+  window.addEventListener('resize', resize);
+  // empty board behind the intro
+  for (let r=0;r<ROWS;r++){ grid.push([]); for (let c=0;c<COLS;c++) grid[r].push({ rock:false, type:-1, conns:[], touched:false, pop:0 }); }
+  start = { r:3, c:2, d:E };
+  queue = []; refillQueue();
+  resize(); updateHud(); showIntro();
+  requestAnimationFrame(frame);
+  // small hook so the game can be driven from a test
+  window.__pipe = {
+    state: () => ({ phase, level, score, lives, filled, goal, start, queue:queue.slice(), countdown, cols:COLS, rows:ROWS, cell }),
+    setQueue: a => { queue = a.slice(); refillQueue(); drawQueue(); },
+    place: place,
+    grid: () => grid.map(row => row.map(g => ({ rock:g.rock, type:g.type })))
+  };
+}
+window.addEventListener('load', boot);
+})();
+</script>
+</body>
+</html>
